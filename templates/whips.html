@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Whips & Party Directives (ह्वीप व्यवस्थापन){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">राजनीतिक दल सम्बन्धी ऐन, २०७३ को दफा २८ अनुसार</span>
+    <h1>ह्वीप तथा दलको निर्देशन · Party Whips Management</h1>
+    <p class="muted">Three-line, Two-line and Advisory Whips issued by Chief Whip & Whip Office</p>
+  </div>
+  <div class="row">
+    {% if can('whip.issue') %}
+    <a class="btn primary" href="{{ url_for('whip_new') }}">+ Issue Party Whip (नयाँ ह्वीप जारी गर्नुहोस्)</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>{{ stats.total }}</b><span>Total Whips (कुल ह्वीप)</span></div>
+  <div class="stat"><b>{{ stats.active }}</b><span>Active Directives (सक्रिय)</span></div>
+  <div class="stat warn"><b>{{ stats.three_line }}</b><span>3-Line Whips (अनिवार्य मतदान)</span></div>
+  <div class="stat"><b>{{ stats.upcoming }}</b><span>Upcoming Votes (आसन्न मतदान)</span></div>
+</div>
+
+<div class="card">
+  <form method="get" action="{{ url_for('whips_list') }}" class="filters">
+    <select name="house">
+      <option value="">— All Assemblies (सबै सभाहरू) —</option>
+      {% for h in HOUSES %}
+      <option value="{{ h }}" {{ 'selected' if sel_house==h }}>{{ HOUSE_LABELS.get(h, h) }}</option>
+      {% endfor %}
+    </select>
+    <select name="whip_type">
+      <option value="">— Whip Type (ह्वीपको प्रकार) —</option>
+      {% for t in WHIP_TYPES %}
+      <option value="{{ t }}" {{ 'selected' if sel_type==t }}>{{ WHIP_TYPE_LABELS.get(t, t) }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">— Status (स्थिति) —</option>
+      <option value="Issued" {{ 'selected' if sel_status=='Issued' }}>Issued (जारी भएको)</option>
+      <option value="Voting Completed" {{ 'selected' if sel_status=='Voting Completed' }}>Voting Completed (मतदान सम्पन्न)</option>
+      <option value="Draft" {{ 'selected' if sel_status=='Draft' }}>Draft (मस्यौदा)</option>
+    </select>
+    <button class="btn">Filter</button>
+    {% if sel_house or sel_type or sel_status %}
+    <a href="{{ url_for('whips_list') }}" class="btn">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card tablewrap">
+  {% if whips %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>चलानी नं. / Ref</th>
+        <th>ह्वीपको विषय / Title</th>
+        <th>ह्वीप प्रकार (Type)</th>
+        <th>तह / सभा (House)</th>
+        <th>दलको निर्देशन (Directive)</th>
+        <th>मतदान मिति (Voting Date)</th>
+        <th>जारीकर्ता (Issued By)</th>
+        <th>स्थिति</th>
+        <th>कार्य</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in whips %}
+      <tr>
+        <td><code>{{ w.ref_no }}</code></td>
+        <td>
+          <a href="{{ url_for('whip_view', wid=w.id) }}"><strong>{{ w.title }}</strong></a>
+          {% if w.bill_title %}
+          <small class="d-block muted">विधेयक: {{ w.bill_title }}</small>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-whip-{{ '3' if w.whip_type=='Three-line' else ('2' if w.whip_type=='Two-line' else '1') }}">
+            {{ w.whip_type }}
+          </span>
+        </td>
+        <td><small>{{ HOUSE_LABELS.get(w.house, w.house) }}</small></td>
+        <td>
+          <span class="directive-badge dir-{{ w.directive|slug }}">
+            {{ WHIP_DIRECTIVE_LABELS.get(w.directive, w.directive) }}
+          </span>
+        </td>
+        <td>
+          <strong>{{ w.voting_date }}</strong>
+          {% if w.voting_time %}<small class="d-block muted">{{ w.voting_time }} बजे</small>{% endif %}
+          <small class="d-block text-nepali">{{ w.voting_date|bs_date }}</small>
+        </td>
+        <td><small>{{ w.issuer_name or 'Chief Whip Office' }}</small></td>
+        <td><span class="badge s-{{ w.status|slug }}">{{ w.status }}</span></td>
+        <td>
+          <a href="{{ url_for('whip_view', wid=w.id) }}" class="btn-sm">Roll Call →</a>
+          <a href="{{ url_for('whip_print', wid=w.id) }}" target="_blank" class="btn-sm muted">Print 🖨️</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="pad muted">No whips found matching the filters.</p>
+  {% endif %}
+</div>
+{% endblock %}

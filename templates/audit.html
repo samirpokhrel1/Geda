@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% block title %}Audit trail{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Audit trail</h1></div>
+<nav class="tabs"><a href="{{ url_for('audit') }}" class="{{ 'on' if not etype }}">All</a>{% for t in types %}<a href="{{ url_for('audit', type=t) }}" class="{{ 'on' if t==etype }}">{{ t }}</a>{% endfor %}</nav>
+<div class="card tablewrap"><table class="tbl"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Entity</th><th>Detail</th></tr></thead><tbody>
+{% for l in logs %}<tr><td class="muted">{{ l.timestamp|fdt }}</td><td>{{ l.actor or 'System' }}</td><td>{{ l.action }}</td><td>{{ l.entity_type or '' }}{% if l.entity_id %} #{{ l.entity_id }}{% endif %}</td><td class="muted">{{ l.detail or '' }}</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="muted">Showing the latest 300 entries.</p>
+{% endblock %}

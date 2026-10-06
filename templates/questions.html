@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% block title %}Questions{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Parliamentary questions</h1>{% if can('question.create') %}<a class="btn primary" href="{{ url_for('question_new') }}">+ New question</a>{% endif %}</div>
+<nav class="tabs"><a href="{{ url_for('questions_list') }}" class="{{ 'on' if not status }}">All</a>
+{% for s in Q_STATUSES %}<a href="{{ url_for('questions_list', status=s) }}" class="{{ 'on' if s==status }}">{{ s }}</a>{% endfor %}</nav>
+<div class="card tablewrap">{% if questions %}<table class="tbl"><thead><tr><th>Subject / Question</th><th>MP</th><th>Ministry</th><th>Submitted</th><th>Status</th></tr></thead><tbody>
+{% for r in questions %}<tr><td><a href="{{ url_for('question_view', qid=r.id) }}">{{ r.subject or (r.question[:70] ~ '…') }}</a></td><td>{{ r.mp_name or '—' }}</td><td>{{ r.ministry or '—' }}</td><td>{{ r.submitted_date or '—' }}</td><td><span class="badge">{{ r.status }}</span></td></tr>{% endfor %}
+</tbody></table>{% else %}<p class="muted pad">No questions.</p>{% endif %}</div>
+{% endblock %}

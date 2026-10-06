@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block title %}Upload document{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Upload document</h1></div>
+<form method="post" enctype="multipart/form-data" class="card form">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  <label class="field"><span>File *</span><input type="file" name="file" required></label>
+  <label class="field"><span>Display name</span><input name="name" maxlength="200" placeholder="Defaults to the file name"></label>
+  <label class="field"><span>Category *</span><select name="category">{% for c in DOC_CATEGORIES %}<option>{{ c }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Attach to bill</span><select name="bill"><option value="">— none —</option>{% for b in bills %}<option value="{{ b.id }}" {{ 'selected' if default_bill|string == b.id|string }}>{{ b.title }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Access level *</span><select name="access_level"><option value="internal">Internal — anyone who can see the bill</option><option value="restricted">Restricted — coordination staff only</option></select></label>
+  <div class="actions"><button class="btn primary">Upload</button><a class="btn" href="{{ url_for('documents_list') }}">Cancel</a></div>
+  <small class="muted">Allowed: pdf, doc(x), xls(x), ppt(x), txt, csv, png, jpg. Max 16 MB.</small>
+</form>
+{% endblock %}

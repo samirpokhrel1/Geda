@@ -1,0 +1,56 @@
+{% extends 'base.html' %}{% block title %}House sittings · सदन हाजिरी{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">संसदीय दलको कार्यालय · SITTING ROLL</span>
+    <h1>सदन बैठक हाजिरी · House sittings</h1>
+    <p class="muted">Track party MP presence for House of Representatives, National Assembly and Province Assemblies. Constitution of Nepal Art. 89(d): ten consecutive sittings without notice may vacate the seat.</p>
+  </div>
+  {% if can('sitting.manage') %}
+  <a class="btn primary" href="{{ url_for('sitting_new') }}">+ Record sitting</a>
+  {% endif %}
+</div>
+<div class="card">
+  <form method="get" class="filters">
+    <select name="house">
+      <option value="">— All houses —</option>
+      {% for h in HOUSES %}
+      <option value="{{ h }}" {{ 'selected' if sel_house==h }}>{{ HOUSE_LABELS.get(h, h) }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn">Filter</button>
+  </form>
+</div>
+<div class="card tablewrap">
+  {% if sittings %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>House</th>
+        <th>Sitting no.</th>
+        <th>Session</th>
+        <th>Agenda</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for s in sittings %}
+      <tr>
+        <td>{{ s.sitting_date }}<small class="d-block muted">{{ s.sitting_date|bs_date }}</small></td>
+        <td>{{ HOUSE_LABELS.get(s.house, s.house) }}</td>
+        <td>{{ s.sitting_no or '—' }}</td>
+        <td>{{ s.session_name or '—' }}</td>
+        <td>{{ s.agenda or '—' }}</td>
+        <td><span class="badge s-{{ s.status|slug }}">{{ s.status }}</span></td>
+        <td><a class="btn-sm" href="{{ url_for('sitting_view', sid=s.id) }}">Roll call →</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="pad muted">No sittings recorded.</p>
+  {% endif %}
+</div>
+{% endblock %}

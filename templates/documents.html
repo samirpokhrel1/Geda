@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Documents</h1><a class="btn primary" href="{{ url_for('document_upload') }}">+ Upload</a></div>
+<nav class="tabs"><a href="{{ url_for('documents_list') }}" class="{{ 'on' if not cat }}">All</a>
+{% for c in DOC_CATEGORIES %}<a href="{{ url_for('documents_list', category=c) }}" class="{{ 'on' if c==cat }}">{{ c }}</a>{% endfor %}</nav>
+<div class="card tablewrap">{% if docs %}<table class="tbl"><thead><tr><th>Name</th><th>Category</th><th>Attached to</th><th>Access</th><th>Uploaded</th></tr></thead><tbody>
+{% for d in docs %}<tr><td><a href="{{ url_for('document_download', did=d.id) }}">{{ d.name }}</a></td><td>{{ d.category }}</td>
+<td>{% if d.bill_title %}<a href="{{ url_for('bill_view', bid=d.related_id, tab='documents') }}">{{ d.bill_title }}</a>{% else %}—{% endif %}</td>
+<td><span class="badge">{{ d.access_level }}</span></td><td class="muted">{{ d.uploader or '—' }} · {{ d.uploaded_at|fdt }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<p class="muted pad">No documents.</p>{% endif %}</div>
+{% endblock %}

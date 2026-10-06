@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}{{ whip.title }} · Whip Workspace{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">पत्र संख्या: <code>{{ whip.ref_no }}</code> · मिति: {{ whip.voting_date|bs_date }}</span>
+    <h1>{{ whip.title }}</h1>
+    <div class="row">
+      <span class="badge badge-whip-{{ '3' if whip.whip_type=='Three-line' else ('2' if whip.whip_type=='Two-line' else '1') }}">
+        {{ whip.whip_type }} Whip
+      </span>
+      <span class="badge badge-house">{{ HOUSE_LABELS.get(whip.house, whip.house) }}</span>
+      <span class="directive-badge dir-{{ whip.directive|slug }}">
+        {{ WHIP_DIRECTIVE_LABELS.get(whip.directive, whip.directive) }}
+      </span>
+      <span class="badge s-{{ whip.status|slug }}">{{ whip.status }}</span>
+    </div>
+  </div>
+  <div class="row">
+    <a class="btn primary" href="{{ url_for('whip_print', wid=whip.id) }}" target="_blank">
+      Print Official Whip Notice (ह्वीप पत्र प्रिन्ट) 🖨️
+    </a>
+    <a class="btn" href="{{ url_for('whips_list') }}">← All Whips</a>
+  </div>
+</div>
+
+<!-- Compliance Progress Bar & Metrics -->
+<div class="stats stats-nepal">
+  <div class="stat stat-primary">
+    <b>{{ stats.rate }}%</b>
+    <span>Compliance Rate (ह्वीप पालना दर)</span>
+  </div>
+  <div class="stat">
+    <b>{{ stats.total }}</b>
+    <span>Targeted MPs (कुल सांसद संख्या)</span>
+  </div>
+  <div class="stat">
+    <b style="color: var(--ok);">{{ stats.complied }}</b>
+    <span>Complied (ह्वीप पालना गर्ने)</span>
+  </div>
+  <div class="stat warn">
+    <b style="color: var(--err);">{{ stats.violated }}</b>
+    <span>Violations (उल्लंघन / दल त्याग)</span>
+  </div>
+  <div class="stat">
+    <b>{{ stats.exempted }}</b>
+    <span>Leave Exempted (स्वीकृत बिदा)</span>
+  </div>
+  <div class="stat">
+    <b>{{ stats.pending }}</b>
+    <span>Pending (मतदान बाँकी)</span>
+  </div>
+</div>
+
+<!-- Whip Legal & Order Brief -->
+<div class="card">
+  <h2>📜 ह्वीपको व्यहोरा तथा निर्देशन · Directive Brief</h2>
+  <p class="big">{{ whip.agenda }}</p>
+  <div class="grid2 muted" style="font-size: .88rem; margin-top: .6rem;">
+    <div><strong>कानुनी आधार:</strong> {{ whip.legal_basis or 'राजनीतिक दल सम्बन्धी ऐन, २०७३ को दफा २८' }}</div>
+    <div><strong>जारीकर्ता:</strong> {{ whip.issuer_name or 'Chief Whip Office' }} ({{ whip.issued_at|fdt }})</div>
+    {% if whip.notes %}
+    <div style="grid-column: 1 / -1; margin-top: .4rem; background: #fff5f5; padding: .6rem .8rem; border-radius: 6px; border-left: 3px solid var(--err);">
+      <strong>⚠️ अनुशासन तथा दण्ड व्यवस्था:</strong> {{ whip.notes }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Member-by-Member Roll Call & Compliance Table -->
+<div class="card">
+  <div class="page-head" style="margin-bottom: .6rem;">
+    <h2>📋 माननीय सांसदहरूको रोल-कल तथा मतदान रेकर्ड · MP Voting Roll Call</h2>
+    <span class="muted">Total: {{ roll_call|length }} MPs</span>
+  </div>
+
+  <div class="tablewrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>माननीय सांसद</th>
+          <th>निर्वाचन क्षेत्र / पद</th>
+          <th>सूचना तामेली</th>
+          <th>बैठकमा उपस्थिति</th>
+          <th>गरिएको मतदान</th>
+          <th>अनुपालन स्थिति</th>
+          <th>अनुशासन कारबाही (दफा ३२)</th>
+          {% if can('whip.record') %}<th>हाजिरी/मतदान प्रविष्टि</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in roll_call %}
+        <tr class="{{ 'violation-row' if m.compliance_status=='Violated' else '' }}">
+          <td>
+            <a href="{{ url_for('member_view', pid=m.parliamentarian_id) }}"><strong>{{ m.mp_name }}</strong></a>
+            {% if m.name_ne %}<small class="d-block text-nepali">{{ m.name_ne }}</small>{% endif %}
+            <small class="muted">{{ m.contact or '' }}</small>
+          </td>
+          <td>
+            <strong>{{ m.constituency or '—' }}</strong>
+            <small class="d-block muted">{{ m.dal_role or 'Member' }}</small>
+          </td>
+          <td>
+            <span class="badge {{ 's-position-decided' if m.served_status=='Served' else '' }}">
+              {{ m.served_status }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {{ 's-position-decided' if m.attendance_status=='Present' else ('p-high' if m.attendance_status=='Absent without Leave' else 'muted') }}">
+              {{ m.attendance_status }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {{ 's-position-decided' if m.vote_cast=='In Line' else ('p-high' if m.vote_cast=='Cross-voted' else '') }}">
+              {{ m.vote_cast }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {{ 's-position-decided' if m.compliance_status=='Complied' else ('p-high' if m.compliance_status=='Violated' else ('s-draft' if m.compliance_status=='Exempted' else '')) }}">
+              {{ m.compliance_status }}
+            </span>
+          </td>
+          <td>
+            {% if m.disciplinary_action and m.disciplinary_action != 'None' %}
+            <span class="badge p-high">⚠️ {{ m.disciplinary_action }}</span>
+            <small class="d-block text-danger">{{ m.remarks }}</small>
+            {% else %}
+            <span class="muted">None</span>
+            {% endif %}
+
+            {% if can('whip.issue') and (m.compliance_status == 'Violated' or m.vote_cast == 'Cross-voted') %}
+            <form method="post" action="{{ url_for('whip_disciplinary', wid=whip.id, wmid=m.id) }}" style="margin-top: .4rem;">
+              <input type="hidden" name="_csrf" value="{{ csrf() }}">
+              <select name="action" style="font-size: .78rem; padding: .2rem .4rem;">
+                <option value="Show-cause Issued" {{ 'selected' if m.disciplinary_action=='Show-cause Issued' }}>Issue Show-cause (स्पष्टीकरण)</option>
+                <option value="Suspended" {{ 'selected' if m.disciplinary_action=='Suspended' }}>Suspend from Party (निलम्बन)</option>
+                <option value="Pardoned" {{ 'selected' if m.disciplinary_action=='Pardoned' }}>Pardon (माफी)</option>
+              </select>
+              <input name="remarks" placeholder="कारण / पत्र संख्या..." value="{{ m.remarks or '' }}" style="font-size: .78rem; padding: .2rem .4rem; width: 120px;">
+              <button class="btn-sm danger">Update</button>
+            </form>
+            {% endif %}
+          </td>
+
+          {% if can('whip.record') %}
+          <td>
+            <form method="post" action="{{ url_for('whip_rollcall', wid=whip.id) }}" class="rollcall-form">
+              <input type="hidden" name="_csrf" value="{{ csrf() }}">
+              <input type="hidden" name="wmid" value="{{ m.id }}">
+              <select name="attendance_status" style="font-size: .8rem; padding: .25rem;">
+                <option value="Present" {{ 'selected' if m.attendance_status=='Present' }}>उपस्थित (Present)</option>
+                <option value="Absent with Leave" {{ 'selected' if m.attendance_status=='Absent with Leave' }}>स्वीकृत बिदा (Leave)</option>
+                <option value="Absent without Leave" {{ 'selected' if m.attendance_status=='Absent without Leave' }}>अनुपस्थित (Absent)</option>
+              </select>
+              <select name="vote_cast" style="font-size: .8rem; padding: .25rem; margin-top: 2px;">
+                <option value="Pending" {{ 'selected' if m.vote_cast=='Pending' }}>Pending (हुन बाँकी)</option>
+                <option value="In Line" {{ 'selected' if m.vote_cast=='In Line' }}>पक्ष/विपक्षमा (In Line)</option>
+                <option value="Cross-voted" {{ 'selected' if m.vote_cast=='Cross-voted' }}>विपरीत मत (Cross-voted)</option>
+                <option value="Abstained" {{ 'selected' if m.vote_cast=='Abstained' }}>तटस्थ (Abstained)</option>
+                <option value="Did Not Vote" {{ 'selected' if m.vote_cast=='Did Not Vote' }}>मतदान नगरेको (No vote)</option>
+              </select>
+              <button class="btn-sm primary" style="margin-top: 3px; width: 100%;">Save</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

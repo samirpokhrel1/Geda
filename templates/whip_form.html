@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Issue Party Whip (ह्वीप जारी गर्नुहोस्){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">संसदीय दलको कार्यालय · WHIP ISSUANCE</span>
+    <h1>आधिकारिक ह्वीप जारी फारम · Issue Party Whip</h1>
+    <p class="muted">राजनीतिक दल सम्बन्धी ऐन, २०७३ को दफा २८ बमोजिम प्रमुख सचेतक / सचेतकद्वारा ह्वीप जारी गर्ने</p>
+  </div>
+  <a class="btn" href="{{ url_for('whips_list') }}">← All Whips</a>
+</div>
+
+<div class="card form">
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+
+    <div class="field">
+      <span>पत्र संख्या / चलानी नं. (Dispatch Reference Number) *</span>
+      <input name="ref_no" value="{{ vals.get('ref_no', default_ref) }}" required>
+      {% if errs.get('ref_no') %}<em class="err">{{ errs['ref_no'] }}</em>{% endif %}
+    </div>
+
+    <div class="field">
+      <span>ह्वीपको विषय / Title *</span>
+      <input name="title" value="{{ vals.get('title', '') }}" placeholder="जस्तै: सम्माननीय प्रधानमन्त्रीको विश्वासको मत सम्बन्धी प्रस्तावमा अनिवार्य पक्षमा मतदान" required>
+      {% if errs.get('title') %}<em class="err">{{ errs['title'] }}</em>{% endif %}
+    </div>
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>ह्वीपको प्रकार (Whip Type) *</span>
+        <select name="whip_type" required>
+          {% for val, lbl in type_opts %}
+          <option value="{{ val }}" {{ 'selected' if vals.get('whip_type')==val }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+        <small class="muted">३-लाइन ह्वीप: अनिवार्य उपस्थिति र अनिवार्य मतदान</small>
+      </div>
+
+      <div class="field">
+        <span>लक्षित सभा / तह (Target Assembly) *</span>
+        <select name="house" required>
+          {% for val, lbl in house_opts %}
+          <option value="{{ val }}" {{ 'selected' if vals.get('house')==val }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>दलको आधिकारिक निर्देशन (Directive) *</span>
+        <select name="directive" required>
+          {% for val, lbl in dir_opts %}
+          <option value="{{ val }}" {{ 'selected' if vals.get('directive')==val }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <span>सम्बन्धित विधेयक (Related Bill if any)</span>
+        <select name="bill_id">
+          {% for val, lbl in bill_opts %}
+          <option value="{{ val }}" {{ 'selected' if vals.get('bill_id')==val }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>मतदान / बैठक मिति (Voting Session Date) *</span>
+        <input type="date" name="voting_date" value="{{ vals.get('voting_date', today) }}" required>
+        {% if errs.get('voting_date') %}<em class="err">{{ errs['voting_date'] }}</em>{% endif %}
+      </div>
+
+      <div class="field">
+        <span>बैठक समय (Voting Time)</span>
+        <input type="time" name="voting_time" value="{{ vals.get('voting_time', '13:00') }}">
+      </div>
+    </div>
+
+    <div class="field">
+      <span>ह्वीपको विस्तृत कार्यसूची तथा आदेश व्यहोरा (Detailed Agenda & Order) *</span>
+      <textarea name="agenda" rows="4" required placeholder="ह्वीपको पूर्ण व्यहोरा, संसदमा पेश हुने प्रस्ताव, मतदान प्रक्रिया र उपस्थिति सम्बन्धी निर्देशन...">{{ vals.get('agenda', '') }}</textarea>
+      {% if errs.get('agenda') %}<em class="err">{{ errs['agenda'] }}</em>{% endif %}
+    </div>
+
+    <div class="field">
+      <span>कानुनी आधार (Legal Basis)</span>
+      <input name="legal_basis" value="{{ vals.get('legal_basis', 'राजनीतिक दल सम्बन्धी ऐन, २०७३ को दफा २८ बमोजिम जारी') }}">
+    </div>
+
+    <div class="field">
+      <span>चेतावनी तथा कैफियत (Warning / Penalty Notes)</span>
+      <textarea name="notes" rows="3" placeholder="ह्वीप उल्लंघन गरेमा हुने कानुनी कारबाही, दल त्याग सम्बन्धी ऐनको दफा ३१/३२ अनुसार स्पष्टीकरण र सांसद पद कारबाहीको व्यहोरा...">{{ vals.get('notes', 'ह्वीप उल्लंघन गरेमा राजनीतिक दल सम्बन्धी ऐन, २०७३ को दफा ३१ र ३२ बमोजिम दल त्याग गरेको मानी सांसद पद खारेजी सम्मको कारबाही हुनेछ।') }}</textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary">Issue Official Whip (ह्वीप जारी गर्नुहोस्)</button>
+      <a href="{{ url_for('whips_list') }}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

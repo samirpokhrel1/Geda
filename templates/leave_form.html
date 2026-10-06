@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Submit Leave Application (बिदाको निवेदन){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">नेपालको संविधान धारा ८९(घ) बमोजिम · LEAVE NOTICE</span>
+    <h1>सांसद बिदा निवेदन फारम · MP Leave Notice</h1>
+    <p class="muted">सदन बैठकमा अनुपस्थित हुने दिनहरूको पूर्वसूचना तथा प्रमुख सचेतकबाट स्वीकृति</p>
+  </div>
+  <a class="btn" href="{{ url_for('leaves_list') }}">← All Leaves</a>
+</div>
+
+<div class="card form">
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+
+    <div class="field">
+      <span>माननीय सांसद (Parliamentarian) *</span>
+      <select name="parliamentarian_id" required>
+        <option value="">— Select MP (माननीय सांसद छान्नुहोस्) —</option>
+        {% for m in mps %}
+        <option value="{{ m.id }}" {{ 'selected' if vals.get('parliamentarian_id')==m.id|string }}>
+          {{ m.name }} {% if m.name_ne %}({{ m.name_ne }}){% endif %} — {{ m.constituency or m.house }}
+        </option>
+        {% endfor %}
+      </select>
+      {% if errs.get('parliamentarian_id') %}<em class="err">{{ errs['parliamentarian_id'] }}</em>{% endif %}
+    </div>
+
+    <div class="field">
+      <span>बिदाको प्रकार (Leave Type) *</span>
+      <select name="leave_type" required>
+        {% for val, lbl in type_opts %}
+        <option value="{{ val }}" {{ 'selected' if vals.get('leave_type')==val }}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>बिदा सुरु मिति (Start Date) *</span>
+        <input type="date" name="start_date" value="{{ vals.get('start_date', today) }}" required>
+        {% if errs.get('start_date') %}<em class="err">{{ errs['start_date'] }}</em>{% endif %}
+      </div>
+
+      <div class="field">
+        <span>बिदा समाप्त मिति (End Date) *</span>
+        <input type="date" name="end_date" value="{{ vals.get('end_date', today) }}" required>
+        {% if errs.get('end_date') %}<em class="err">{{ errs['end_date'] }}</em>{% endif %}
+      </div>
+    </div>
+
+    <div class="field">
+      <span>बिदाको विस्तृत कारण तथा व्यहोरा (Detailed Reason) *</span>
+      <textarea name="reason" rows="4" placeholder="उपचार, निर्वाचन क्षेत्र भ्रमण, सरकारी विदेश भ्रमण वा अन्य घरायसी कारण स्पष्ट खुलाउनुहोस्..." required>{{ vals.get('reason', '') }}</textarea>
+      {% if errs.get('reason') %}<em class="err">{{ errs['reason'] }}</em>{% endif %}
+    </div>
+
+    <div class="actions">
+      <button class="btn primary">Submit Leave Application (बिदा दर्ता गर्नुहोस्)</button>
+      <a href="{{ url_for('leaves_list') }}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

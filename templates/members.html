@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Members of Parliament (माननीय सांसदहरू){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">संसदीय दलको नामावली · ROSTER</span>
+    <h1>माननीय सांसदहरू · Parliamentarians Directory</h1>
+    <p class="muted">Federal House of Representatives, National Assembly & 7 Province Assemblies</p>
+  </div>
+  <div class="row">
+    {% if can('member.manage') %}
+    <a class="btn primary" href="{{ url_for('member_new') }}">+ Register New MP (नयाँ सांसद दर्ता)</a>
+    {% endif %}
+    <a class="btn" href="{{ url_for('members_print') }}" target="_blank">Print roster (नामावली छाप्नुहोस्)</a>
+  </div>
+</div>
+
+<div class="stats stats-nepal">
+  <div class="stat"><b>{{ stats.total }}</b><span>Total Party MPs (जम्मा)</span></div>
+  <div class="stat"><b>{{ stats.hor }}</b><span>HoR (प्रतिनिधि सभा)</span></div>
+  <div class="stat"><b>{{ stats.na }}</b><span>National Assembly (राष्ट्रिय सभा)</span></div>
+  <div class="stat"><b>{{ stats.province }}</b><span>Provinces (प्रदेश सभाहरू)</span></div>
+  <div class="stat stat-sub"><b>{{ stats.fptp }}</b><span>Direct (प्रत्यक्ष FPTP)</span></div>
+  <div class="stat stat-sub"><b>{{ stats.pr }}</b><span>Proportional (समानुपातिक PR)</span></div>
+</div>
+
+<div class="card">
+  <form method="get" action="{{ url_for('members_list') }}" class="filters">
+    <input type="search" name="q" value="{{ query }}" placeholder="Search by name, district, or constituency...">
+    <select name="house">
+      <option value="">— All Assemblies (सबै तह/सभा) —</option>
+      {% for h in HOUSES %}
+      <option value="{{ h }}" {{ 'selected' if sel_house==h }}>{{ HOUSE_LABELS.get(h, h) }}</option>
+      {% endfor %}
+    </select>
+    <select name="election_type">
+      <option value="">— Election System (निर्वाचन प्रणाली) —</option>
+      {% for e in ELECTION_TYPES %}
+      <option value="{{ e }}" {{ 'selected' if sel_election==e }}>{{ ELECTION_LABELS.get(e, e) }}</option>
+      {% endfor %}
+    </select>
+    <select name="pr_cluster">
+      <option value="">— Inclusion Cluster (समावेशी समूह) —</option>
+      {% for c in PR_CLUSTERS %}
+      <option value="{{ c }}" {{ 'selected' if sel_cluster==c }}>{{ PR_CLUSTER_LABELS.get(c, c) }}</option>
+      {% endfor %}
+    </select>
+    <select name="dal_role">
+      <option value="">— Role in Dal (दलको पद) —</option>
+      {% for r in DAL_ROLES %}
+      <option value="{{ r }}" {{ 'selected' if sel_role==r }}>{{ DAL_ROLE_LABELS.get(r, r) }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn">Filter (फिल्टर)</button>
+    {% if query or sel_house or sel_election or sel_cluster or sel_role %}
+    <a href="{{ url_for('members_list') }}" class="btn">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card tablewrap">
+  {% if mps %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>माननीय सांसद (Name)</th>
+        <th>सभा / तह (House)</th>
+        <th>निर्वाचन क्षेत्र / जिल्ला</th>
+        <th>प्रणाली र क्लस्टर</th>
+        <th>संसदीय दलमा पद</th>
+        <th>समिति (Committee)</th>
+        <th>सम्पर्क विवरण</th>
+        <th>कार्य</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in mps %}
+      <tr>
+        <td>
+          <a href="{{ url_for('member_view', pid=m.id) }}"><strong>{{ m.name }}</strong></a>
+          {% if m.name_ne %}
+          <small class="d-block text-nepali">{{ m.name_ne }}</small>
+          {% endif %}
+          {% if m.user_email %}
+          <small class="muted">Linked: {{ m.user_email }}</small>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-house">{{ HOUSE_LABELS.get(m.house, m.house) }}</span>
+          {% if m.province and m.province != 'Federal' %}
+          <small class="d-block muted">{{ m.province }} Province</small>
+          {% endif %}
+        </td>
+        <td>
+          <strong>{{ m.constituency or '—' }}</strong>
+          {% if m.district %}
+          <small class="d-block muted">{{ m.district }}</small>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge {{ 'badge-fptp' if m.election_type=='FPTP' else 'badge-pr' }}">
+            {{ m.election_type or 'FPTP' }}
+          </span>
+          {% if m.pr_cluster and m.pr_cluster != 'None / Direct' %}
+          <small class="d-block muted">{{ m.pr_cluster }}</small>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-role role-{{ m.dal_role|slug }}">
+            {{ m.dal_role or 'Member' }}
+          </span>
+        </td>
+        <td>
+          <small>{{ m.committee or '—' }}</small>
+        </td>
+        <td>
+          <small class="d-block">{{ m.contact or '—' }}</small>
+          {% if m.pa_name %}
+          <small class="muted">PA: {{ m.pa_name }} ({{ m.pa_contact or '' }})</small>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{{ url_for('member_view', pid=m.id) }}" class="btn-sm">View Profile →</a>
+          {% if can('member.manage') %}
+          <a href="{{ url_for('member_edit', pid=m.id) }}" class="btn-sm muted">Edit</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="pad muted">No parliamentarians found matching the current filters.</p>
+  {% endif %}
+</div>
+{% endblock %}

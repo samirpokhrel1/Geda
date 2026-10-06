@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% block title %}{{ mp.name }} · MP Profile{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">माननीय सांसद विवरण · MP PROFILE</span>
+    <h1>{{ mp.name }}</h1>
+    {% if mp.name_ne %}<h2 class="text-nepali">{{ mp.name_ne }}</h2>{% endif %}
+    <div class="row">
+      <span class="badge badge-house">{{ HOUSE_LABELS.get(mp.house, mp.house) }}</span>
+      <span class="badge {{ 'badge-fptp' if mp.election_type=='FPTP' else 'badge-pr' }}">{{ mp.election_type }}</span>
+      {% if mp.pr_cluster and mp.pr_cluster != 'None / Direct' %}
+      <span class="badge">{{ mp.pr_cluster }}</span>
+      {% endif %}
+      <span class="badge badge-role">{{ mp.dal_role or 'Member' }}</span>
+    </div>
+  </div>
+  <div class="row">
+    {% if can('member.manage') %}
+    <a class="btn" href="{{ url_for('member_edit', pid=mp.id) }}">Edit Profile (सम्पादन)</a>
+    {% endif %}
+    <a class="btn" href="{{ url_for('members_list') }}">← All Members</a>
+  </div>
+</div>
+
+<!-- MP KPIs -->
+<div class="stats">
+  <div class="stat">
+    <b>{{ stats.complied_whips }} / {{ stats.total_whips }}</b>
+    <span>Whips Complied (ह्वीप पालना)</span>
+  </div>
+  <div class="stat">
+    <b>{{ stats.speeches_count }}</b>
+    <span>Floor Speeches (सदनमा सम्बोधन)</span>
+  </div>
+  <div class="stat">
+    <b>{{ stats.total_leave_days }}</b>
+    <span>Approved Leave Days (बिदा दिन)</span>
+  </div>
+  <div class="stat">
+    <b>{{ stats.questions_count }}</b>
+    <span>Questions Filed (संसदीय प्रश्न)</span>
+  </div>
+  <div class="stat {{ 'warn' if stats.absence_streak >= 3 }}">
+    <b>{{ stats.absence_streak }}</b>
+    <span>Consecutive absences (धारा ८९घ)</span>
+  </div>
+</div>
+
+<div class="grid2">
+  <!-- Personal & Constituency Details -->
+  <section class="card">
+    <h2>📋 व्यक्तिगत तथा निर्वाचन क्षेत्र विवरण · Bio & Contacts</h2>
+    <dl class="kv">
+      <dt>Constituency</dt>
+      <dd><strong>{{ mp.constituency or '—' }}</strong> ({{ mp.district or '—' }})</dd>
+
+      <dt>Legislative Body</dt>
+      <dd>{{ HOUSE_LABELS.get(mp.house, mp.house) }}</dd>
+
+      <dt>Province</dt>
+      <dd>{{ mp.province or 'Federal' }}</dd>
+
+      <dt>Election System</dt>
+      <dd>{{ ELECTION_LABELS.get(mp.election_type, mp.election_type) }}</dd>
+
+      <dt>PR Cluster</dt>
+      <dd>{{ PR_CLUSTER_LABELS.get(mp.pr_cluster, mp.pr_cluster) }}</dd>
+
+      <dt>Party Role</dt>
+      <dd><strong>{{ DAL_ROLE_LABELS.get(mp.dal_role, mp.dal_role) }}</strong></dd>
+
+      <dt>Personal Contact</dt>
+      <dd>{{ mp.contact or '—' }}</dd>
+
+      <dt>PA (स्वकीय सचिव)</dt>
+      <dd>{{ mp.pa_name or '—' }} {% if mp.pa_contact %}({{ mp.pa_contact }}){% endif %}</dd>
+
+      <dt>Capital Residence</dt>
+      <dd>{{ mp.capital_address or '—' }}</dd>
+
+      <dt>Blood Group</dt>
+      <dd>{{ mp.blood_group or '—' }}</dd>
+
+      <dt>Linked Account</dt>
+      <dd>{{ mp.user_email or 'None' }}</dd>
+
+      <dt>Bio Notes</dt>
+      <dd class="pre">{{ mp.bio or 'No bio recorded.' }}</dd>
+    </dl>
+  </section>
+
+  <!-- Parliamentary Committees -->
+  <section class="card">
+    <h2>📑 संसदीय समितिहरू · Committee Assignments</h2>
+    {% if committees %}
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>समिति (Committee)</th>
+          <th>पद (Role)</th>
+          <th>सभा</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in committees %}
+        <tr>
+          <td><a href="{{ url_for('committee_view', cid=c.id) }}"><strong>{{ c.name }}</strong></a></td>
+          <td><span class="badge {{ 'badge-role' if c.role=='Chair' else '' }}">{{ c.role }}</span></td>
+          <td class="muted">{{ c.house }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No formal committee assignments recorded.</p>
+    {% endif %}
+
+    <h2 style="margin-top: 1.5rem;">📅 बिदा तथा हाजिरी विवरण · Leave Records</h2>
+    {% if leaves %}
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>प्रकार</th>
+          <th>मिति</th>
+          <th>दिन</th>
+          <th>स्थिति</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leaves %}
+        <tr>
+          <td>{{ l.leave_type }}</td>
+          <td><small>{{ l.start_date }} देखि {{ l.end_date }}</small></td>
+          <td>{{ l.days_count }}</td>
+          <td><span class="badge s-position-decided">{{ l.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No leaves taken.</p>
+    {% endif %}
+
+    <h2 style="margin-top: 1.5rem;">🗳️ सदन बैठक हाजिरी · House sittings</h2>
+    {% if sittings %}
+    <table class="tbl">
+      <thead><tr><th>मिति</th><th>बैठक</th><th>स्थिति</th></tr></thead>
+      <tbody>
+      {% for s in sittings %}
+        <tr>
+          <td>{{ s.sitting_date }}</td>
+          <td>{{ s.sitting_no or s.session_name or '—' }}</td>
+          <td>{{ SITTING_ATT_LABELS.get(s.att_status, s.att_status) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No sitting roll recorded for this member.</p>
+    {% endif %}
+  </section>
+</div>
+
+<!-- Whip Compliance History -->
+<div class="card">
+  <h2>⚖️ ह्वीप अनुपालन इतिहास · Whip Compliance Record</h2>
+  {% if whip_history %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>चलानी नं.</th>
+        <th>ह्वीपको विषय / Title</th>
+        <th>ह्वीप प्रकार</th>
+        <th>दलको निर्देशन</th>
+        <th>मतदान मिति</th>
+        <th>उपस्थिति</th>
+        <th>मतदान</th>
+        <th>अनुपालन स्थिति</th>
+        <th>कैफियत / कारबाही</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in whip_history %}
+      <tr>
+        <td><code>{{ w.ref_no }}</code></td>
+        <td><a href="{{ url_for('whip_view', wid=w.whip_id) }}"><strong>{{ w.title }}</strong></a></td>
+        <td><span class="badge">{{ w.whip_type }}</span></td>
+        <td><strong>{{ w.directive }}</strong></td>
+        <td>{{ w.voting_date }}</td>
+        <td>{{ w.attendance_status }}</td>
+        <td>
+          <span class="badge {{ 'p-high' if w.vote_cast=='Cross-voted' else ('s-position-decided' if w.vote_cast=='In Line' else '') }}">
+            {{ w.vote_cast }}
+          </span>
+        </td>
+        <td>
+          <span class="badge {{ 's-position-decided' if w.compliance_status=='Complied' else ('p-high' if w.compliance_status=='Violated' else '') }}">
+            {{ w.compliance_status }}
+          </span>
+        </td>
+        <td>
+          {% if w.disciplinary_action and w.disciplinary_action != 'None' %}
+          <span class="badge p-high">⚠️ {{ w.disciplinary_action }}</span>
+          {% endif %}
+          <small class="muted">{{ w.remarks or '—' }}</small>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No whips issued yet targeting this MP.</p>
+  {% endif %}
+</div>
+
+<!-- Floor Speeches -->
+<div class="card">
+  <h2>🎙️ सदनमा वक्ता सम्बोधन · Floor Speeches Roster</h2>
+  {% if speeches %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>मिति</th>
+        <th>सत्र प्रकार</th>
+        <th>समय</th>
+        <th>विषय / मुद्दा</th>
+        <th>स्थिति</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in speeches %}
+      <tr>
+        <td>{{ s.session_date }}</td>
+        <td><span class="badge">{{ s.session_type }}</span></td>
+        <td>{{ s.allocated_minutes }} मिनेट</td>
+        <td>
+          <strong>{{ s.topic }}</strong>
+          {% if s.talking_points %}<p class="pre muted" style="margin: .2rem 0 0; font-size: .85rem;">{{ s.talking_points }}</p>{% endif %}
+        </td>
+        <td><span class="badge s-{{ s.status|slug }}">{{ s.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No scheduled speeches recorded.</p>
+  {% endif %}
+</div>
+{% endblock %}

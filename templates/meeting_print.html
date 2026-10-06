@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<title>बैठक निर्णय तथा उपस्थिति · {{ m.title }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  body { background: #fff; color: #000; font-family: system-ui, -apple-system, 'Mukta', 'Preeti', sans-serif; }
+  .print-page { max-width: 820px; margin: 2rem auto; padding: 2.5rem; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .letterhead-header { text-align: center; border-bottom: 2px solid #8b1e2b; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .letterhead-nep { font-size: 1.6rem; font-weight: 700; color: #8b1e2b; line-height: 1.2; }
+  .letterhead-en { font-size: 1.1rem; font-weight: 600; color: #16284f; }
+  .letterhead-sub { font-size: .95rem; color: #555; }
+  .letter-meta { display: flex; justify-content: space-between; font-size: .95rem; margin-bottom: 1.5rem; }
+  .letter-subj { text-align: center; font-size: 1.25rem; font-weight: 700; text-decoration: underline; margin: 1.5rem 0; }
+  .minutes-box { background: #fdfcf9; border: 1px solid #e0d8cc; padding: 1rem 1.2rem; border-radius: 6px; margin: 1.2rem 0; line-height: 1.7; }
+  .roster-tbl { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+  .roster-tbl th, .roster-tbl td { border: 1px solid #333; padding: .55rem .75rem; text-align: left; }
+  .roster-tbl th { background: #f5f5f5; font-weight: 700; }
+  .sig-section { display: flex; justify-content: space-between; margin-top: 3.5rem; text-align: center; }
+  .sig-block { width: 220px; }
+  .sig-line { border-top: 1px solid #000; margin-top: 3.5rem; padding-top: .4rem; font-weight: 600; }
+  .print-btn-bar { max-width: 820px; margin: 1rem auto; display: flex; justify-content: space-between; }
+  @media print {
+    .print-btn-bar { display: none !important; }
+    .print-page { border: none; box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="print-btn-bar">
+  <button onclick="window.print()" class="btn primary">🖨️ Print Meeting Minutes (बैठक निर्णय प्रिन्ट गर्नुहोस्)</button>
+  <a href="{{ url_for('meeting_view', mid=m.id) }}" class="btn">← Back to Meeting</a>
+</div>
+
+<div class="print-page">
+  <div class="letterhead-header">
+    <div class="letterhead-nep">नेपाल ... संसदीय दलको कार्यालय</div>
+    <div class="letterhead-en">PARLIAMENTARY PARTY OFFICE · DECISIONS & MINUTES</div>
+    <div class="letterhead-sub">{{ HOUSE_LABELS.get(m.house, m.house or 'संसदीय दल कार्यसमिति') }} · सिंहदरबार, काठमाडौँ</div>
+  </div>
+
+  <div class="letter-meta">
+    <div>
+      <div><strong>बैठक प्रकार:</strong> {{ m.meeting_category or 'संसदीय दलको बैठक' }}</div>
+      <div><strong>स्थान:</strong> {{ m.location or 'दलको कार्यालय, सिंहदरबार' }}</div>
+    </div>
+    <div style="text-align: right;">
+      <div><strong>मिति:</strong> {{ m.date|fdt }} ({{ m.date[:10]|bs_date }})</div>
+    </div>
+  </div>
+
+  <div class="letter-subj">
+    बैठक निर्णय तथा उपस्थिति विवरण (Decisions & Minutes)
+  </div>
+
+  <div>
+    <strong>बैठकको शीर्षक:</strong> {{ m.title }}
+  </div>
+
+  <div style="margin-top: .8rem;">
+    <strong>१. कार्यसूची (Agenda):</strong>
+    <p class="pre" style="margin: .3rem 0; line-height: 1.6;">{{ m.agenda or 'प्रस्तावित कार्यसूची अनुसार।' }}</p>
+  </div>
+
+  <div style="margin-top: 1rem;">
+    <strong>२. दलको औपचारिक निर्णयहरू (Formal Decisions & Resolutions):</strong>
+    <div class="minutes-box">
+      <p class="pre" style="margin: 0; font-size: 1.05rem;">{{ m.decisions or 'कुनै विशेष निर्णय दर्ता गरिएको छैन।' }}</p>
+    </div>
+  </div>
+
+  {% if m.minutes %}
+  <div style="margin-top: 1rem;">
+    <strong>३. माइन्युट तथा छलफलको सारांश (Discussion Summary):</strong>
+    <p class="pre" style="margin: .3rem 0; line-height: 1.6; font-size: .95rem; color: #333;">{{ m.minutes }}</p>
+  </div>
+  {% endif %}
+
+  <div style="margin-top: 1.5rem;">
+    <strong>४. बैठक उपस्थिति नामावली (Roll Call Attendance):</strong>
+    <table class="roster-tbl">
+      <thead>
+        <tr>
+          <th style="width: 40px; text-align: center;">क्र.सं.</th>
+          <th>माननीय सांसदको नाम</th>
+          <th>निर्वाचन क्षेत्र / पद</th>
+          <th>हाजिरी स्थिति</th>
+          <th style="width: 140px; text-align: center;">हस्ताक्षर</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in attendance %}
+        <tr>
+          <td style="text-align: center;">{{ loop.index }}</td>
+          <td><strong>{{ a.mp_name }}</strong> {% if a.name_ne %}({{ a.name_ne }}){% endif %}</td>
+          <td>{{ a.constituency or '—' }}</td>
+          <td>{{ a.status }}</td>
+          <td></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align: center; color: #777;">उपस्थिति विवरण प्रविष्टि गरिएको छैन।</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sig-section">
+    <div class="sig-block">
+      <div class="sig-line">
+        (..............................................)<br>
+        <strong>संसदीय दल कार्यालय सचिव</strong><br>
+        संसदीय दलको कार्यालय
+      </div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">
+        (..............................................)<br>
+        <strong>प्रमुख सचेतक</strong><br>
+        संसदीय दलको कार्यालय
+      </div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">
+        (..............................................)<br>
+        <strong>संसदीय दलको नेता</strong><br>
+        संसदीय दलको कार्यालय
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

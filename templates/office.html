@@ -1,0 +1,146 @@
+{% extends 'base.html' %}{% block title %}संसदीय दलको कार्यालय{% endblock %}
+{% block content %}
+<div class="dash-hero">
+  <div class="dash-hero-text">
+    <div class="dash-subtitle">SAMSADIYA DAL OFFICE · संसदीय दलको कार्यालय</div>
+    <h1>दल कार्यालय डेस्क · Operations Desk</h1>
+    <p class="muted">Whip, sitting roll, correspondence and member strength for federal and provincial benches.</p>
+  </div>
+  <div class="row">
+    {% if can('sitting.manage') %}<a class="btn" href="{{ url_for('sitting_new') }}">+ Sitting</a>{% endif %}
+    {% if can('letter.manage') %}<a class="btn" href="{{ url_for('letter_new') }}">+ Letter</a>{% endif %}
+    <a class="btn primary" href="{{ url_for('members_print') }}" target="_blank">Print roster</a>
+  </div>
+</div>
+
+<div class="section-title"><h2>दलको संख्या · Strength by house</h2></div>
+<div class="stats stats-nepal">
+  {% for h, c in strength %}
+  <a class="stat {{ 'stat-primary' if c else '' }}" href="{{ url_for('members_list', house=h) }}">
+    <b>{{ c }}</b>
+    <span>{{ HOUSE_LABELS.get(h, h) }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <div class="card-head"><h2>नेतृत्व · Dal leadership</h2></div>
+    {% if leaders %}
+    <table class="tbl">
+      <thead><tr><th>Role</th><th>Hon. Member</th><th>House</th></tr></thead>
+      <tbody>
+      {% for m in leaders %}
+      <tr>
+        <td><span class="badge badge-role">{{ DAL_ROLE_LABELS.get(m.dal_role, m.dal_role) }}</span></td>
+        <td><a href="{{ url_for('member_view', pid=m.id) }}"><strong>{{ m.name }}</strong></a>
+          {% if m.name_ne %}<small class="d-block text-nepali">{{ m.name_ne }}</small>{% endif %}</td>
+        <td><small>{{ HOUSE_LABELS.get(m.house, m.house) }}</small></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No leadership roles recorded.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>समावेशी प्रतिनिधित्व · Inclusion</h2></div>
+    <table class="tbl">
+      <tbody>
+      {% for c in clusters %}
+      <tr>
+        <td>{{ PR_CLUSTER_LABELS.get(c.cluster, c.cluster) }}</td>
+        <td><strong>{{ c.c }}</strong></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:.8rem">Election system</p>
+    <div class="row">
+      {% for e in elections %}
+      <span class="badge">{{ ELECTION_LABELS.get(e.election_type, e.election_type) }}: {{ e.c }}</span>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% if watch %}
+<div class="art-alert-card">
+  <div class="art-alert-icon">⚠️</div>
+  <div class="art-alert-text">
+    <strong>धारा ८९(घ) अनुगमन:</strong>
+    लगातार बिना सूचना सदन बैठकमा अनुपस्थित सांसद। १० बैठक पुगे पद रिक्त हुन सक्छ।
+  </div>
+</div>
+<div class="card">
+  <h2>Consecutive absence watch</h2>
+  <table class="tbl">
+    <thead><tr><th>MP</th><th>House</th><th>Streak</th><th>Risk</th></tr></thead>
+    <tbody>
+    {% for w in watch %}
+    <tr class="{{ 'violation-row' if w.risk=='vacancy' }}">
+      <td><a href="{{ url_for('member_view', pid=w.id) }}"><strong>{{ w.name }}</strong></a>
+        <small class="d-block muted">{{ w.constituency }}</small></td>
+      <td>{{ HOUSE_LABELS.get(w.house, w.house) }}</td>
+      <td><strong>{{ w.streak }}</strong> sittings</td>
+      <td>
+        {% if w.risk=='vacancy' %}<span class="badge p-high">Art. 89(d) vacancy risk</span>
+        {% else %}<span class="badge p-medium">Watch ({{ w.streak }}/10)</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="grid2">
+  <section class="card">
+    <div class="card-head">
+      <h2>सदन बैठक · Recent sittings</h2>
+      <a href="{{ url_for('sittings_list') }}" class="btn-sm">All →</a>
+    </div>
+    {% if sittings %}
+    <table class="tbl">
+      <tbody>
+      {% for s in sittings %}
+      <tr>
+        <td><a href="{{ url_for('sitting_view', sid=s.id) }}"><strong>{{ s.sitting_no or 'Sitting' }}</strong></a>
+          <small class="d-block muted">{{ HOUSE_LABELS.get(s.house, s.house) }}</small></td>
+        <td>{{ s.sitting_date|bs_date }}</td>
+        <td><span class="badge s-{{ s.status|slug }}">{{ s.status }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No sittings recorded yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>पत्र दर्ता · Correspondence</h2>
+      <a href="{{ url_for('letters_list') }}" class="btn-sm">All →</a>
+    </div>
+    {% if letters %}
+    <table class="tbl">
+      <tbody>
+      {% for l in letters %}
+      <tr>
+        <td><code>{{ l.ref_no }}</code>
+          <small class="d-block">{{ l.subject }}</small></td>
+        <td>{{ LETTER_DIRECTION_LABELS.get(l.direction, l.direction) }}</td>
+        <td>{{ l.letter_date }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No letters registered.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

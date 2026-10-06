@@ -1,0 +1,64 @@
+{% extends 'base.html' %}{% block title %}Sitting roll · {{ sitting.house }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">{{ HOUSE_LABELS.get(sitting.house, sitting.house) }}</span>
+    <h1>{{ sitting.sitting_no or 'House sitting' }}</h1>
+    <p class="muted">{{ sitting.sitting_date|bs_date }} · {{ sitting.session_name or '' }}</p>
+  </div>
+  <a class="btn" href="{{ url_for('sittings_list') }}">← All sittings</a>
+</div>
+<div class="stats">
+  <div class="stat"><b>{{ present }}</b><span>Present</span></div>
+  <div class="stat"><b>{{ absent }}</b><span>Absent (no notice)</span></div>
+  <div class="stat"><b>{{ leave }}</b><span>On leave</span></div>
+  <div class="stat"><b>{{ duty }}</b><span>Official duty</span></div>
+</div>
+{% if sitting.agenda %}<div class="card"><p class="pre">{{ sitting.agenda }}</p></div>{% endif %}
+<form method="post" action="{{ url_for('sitting_attendance', sid=sitting.id) }}">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  <div class="card tablewrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Hon. Member</th>
+          <th>Role</th>
+          <th>Attendance</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in roll %}
+        <tr class="{{ 'violation-row' if r.status=='Absent' }}">
+          <td>
+            <a href="{{ url_for('member_view', pid=r.parliamentarian_id) }}"><strong>{{ r.name }}</strong></a>
+            {% if r.name_ne %}<small class="d-block text-nepali">{{ r.name_ne }}</small>{% endif %}
+            <small class="muted">{{ r.constituency }}</small>
+          </td>
+          <td><small>{{ r.dal_role }}</small></td>
+          <td>
+            {% if can('sitting.manage') %}
+            <select name="st_{{ r.parliamentarian_id }}">
+              {% for s in SITTING_ATT_STATUSES %}
+              <option value="{{ s }}" {{ 'selected' if r.status==s }}>{{ SITTING_ATT_LABELS.get(s, s) }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            {{ SITTING_ATT_LABELS.get(r.status, r.status) }}
+            {% endif %}
+          </td>
+          <td>
+            {% if can('sitting.manage') %}
+            <input type="text" name="rm_{{ r.parliamentarian_id }}" value="{{ r.remarks or '' }}" placeholder="Remark">
+            {% else %}{{ r.remarks or '—' }}{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if can('sitting.manage') %}
+  <div class="actions"><button class="btn primary">Save roll call (हाजिरी सुरक्षित गर्नुहोस्)</button></div>
+  {% endif %}
+</form>
+{% endblock %}

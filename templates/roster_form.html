@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Schedule Floor Speaker (वक्ता निर्धारण){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">संसदीय दलको सदन समन्वय · SPEAKER ALLOCATION</span>
+    <h1>सदन वक्ता निर्धारण फारम · Schedule Floor Speaker</h1>
+    <p class="muted">सभामुख/अध्यक्षको सचिवालयमा पेश गर्न दलको तर्फबाट वक्ता चयन र समय निर्धारण</p>
+  </div>
+  <a class="btn" href="{{ url_for('rosters_list') }}">← All Rosters</a>
+</div>
+
+<div class="card form">
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>तह / सभा (Legislative Assembly) *</span>
+        <select name="house" required>
+          {% for val, lbl in house_opts %}
+          <option value="{{ val }}" {{ 'selected' if vals.get('house')==val }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <span>बैठक मिति (Session Date) *</span>
+        <input type="date" name="session_date" value="{{ vals.get('session_date', today) }}" required>
+        {% if errs.get('session_date') %}<em class="err">{{ errs['session_date'] }}</em>{% endif %}
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>सत्र प्रकार (Session Type) *</span>
+        <select name="session_type" required>
+          {% for val, lbl in type_opts %}
+          <option value="{{ val }}" {{ 'selected' if vals.get('session_type')==val }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <span>वक्ता माननीय सांसद (Speaker MP) *</span>
+        <select name="parliamentarian_id" required>
+          <option value="">— Select MP (माननीय सांसद छान्नुहोस्) —</option>
+          {% for m in mps %}
+          <option value="{{ m.id }}" {{ 'selected' if vals.get('parliamentarian_id')==m.id|string }}>
+            {{ m.name }} {% if m.name_ne %}({{ m.name_ne }}){% endif %} — {{ m.constituency or m.house }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if errs.get('parliamentarian_id') %}<em class="err">{{ errs['parliamentarian_id'] }}</em>{% endif %}
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom: .85rem;">
+      <div class="field">
+        <span>छुट्याइएको समय (Allocated Minutes) *</span>
+        <select name="allocated_minutes">
+          <option value="1" {{ 'selected' if vals.get('allocated_minutes')=='1' }}>१ मिनेट (Zero Hour / शून्य समय)</option>
+          <option value="3" {{ 'selected' if vals.get('allocated_minutes')=='3' }}>३ मिनेट (Special Hour / विशेष समय)</option>
+          <option value="5" {{ 'selected' if vals.get('allocated_minutes')=='5' }}>५ मिनेट (Special Hour / विशेष समय)</option>
+          <option value="10" {{ 'selected' if vals.get('allocated_minutes')=='10' }}>१० मिनेट (Bill Debate / विधेयक छलफल)</option>
+          <option value="15" {{ 'selected' if vals.get('allocated_minutes')=='15' }}>१५ मिनेट (Budget / नीति तथा कार्यक्रम)</option>
+          <option value="20" {{ 'selected' if vals.get('allocated_minutes')=='20' }}>२० मिनेट (दलीय प्रमुख वक्ता)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <span>बोल्ने क्रम (Speaking Order) *</span>
+        <input type="number" name="speaking_order" min="1" max="50" value="{{ vals.get('speaking_order', '1') }}">
+      </div>
+    </div>
+
+    <div class="field">
+      <span>सम्बन्धित विधेयक (Related Bill if applicable)</span>
+      <select name="bill_id">
+        {% for val, lbl in bill_opts %}
+        <option value="{{ val }}" {{ 'selected' if vals.get('bill_id')==val }}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <span>सम्बोधनको विषय तथा शीर्षक (Topic / Issue Title) *</span>
+      <input name="topic" value="{{ vals.get('topic', '') }}" placeholder="जस्तै: काठमाडौँ उपत्यकाको सडक विस्तार तथा धुलो नियन्त्रण सम्बन्धी" required>
+      {% if errs.get('topic') %}<em class="err">{{ errs['topic'] }}</em>{% endif %}
+    </div>
+
+    <div class="field">
+      <span>संसदीय दलको मुख्य बुँदाहरू (Talking Points / Speech Notes)</span>
+      <textarea name="talking_points" rows="4" placeholder="१. समस्याको पृष्ठभूमि...&#10;२. तथ्याङ्क तथा प्रमाण...&#10;३. सरकार र सम्बन्धित मन्त्रालय समक्ष मुख्य मागहरू...">{{ vals.get('talking_points', '') }}</textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary">Schedule Speaker (वक्ता तालिकामा थप्नुहोस्)</button>
+      <a href="{{ url_for('rosters_list') }}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

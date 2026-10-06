@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Notifications</h1>
+{% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="btn">Mark all read</button></form>{% endif %}</div>
+<div class="card">{% if rows %}<ul class="feed">{% for n in rows %}<li class="{{ '' if n.read_at else 'unread' }}">
+{% if n.link %}<a href="{{ url_for('notification_go', nid=n.id) }}">{{ n.message }}</a>{% else %}{{ n.message }}{% endif %}<small>{{ n.type }} · {{ n.created_at|fdt }}</small></li>{% endfor %}</ul>
+{% else %}<p class="muted">You're all caught up.</p>{% endif %}</div>
+{% endblock %}

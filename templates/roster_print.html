@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<title>सदन वक्ता नामावली · {{ session_date }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  body { background: #fff; color: #000; font-family: system-ui, -apple-system, 'Mukta', 'Preeti', sans-serif; }
+  .print-page { max-width: 820px; margin: 2rem auto; padding: 2.5rem; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .letterhead-header { text-align: center; border-bottom: 2px solid #8b1e2b; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .letterhead-nep { font-size: 1.6rem; font-weight: 700; color: #8b1e2b; line-height: 1.2; }
+  .letterhead-en { font-size: 1.1rem; font-weight: 600; color: #16284f; }
+  .letterhead-sub { font-size: .95rem; color: #555; }
+  .letter-meta { display: flex; justify-content: space-between; font-size: .95rem; margin-bottom: 1.5rem; }
+  .letter-subj { text-align: center; font-size: 1.2rem; font-weight: 700; text-decoration: underline; margin: 1.5rem 0; }
+  .sig-section { display: flex; justify-content: flex-end; margin-top: 3.5rem; text-align: center; }
+  .sig-block { width: 250px; }
+  .sig-line { border-top: 1px solid #000; margin-top: 3.5rem; padding-top: .4rem; font-weight: 600; }
+  .print-btn-bar { max-width: 820px; margin: 1rem auto; display: flex; justify-content: space-between; }
+  .roster-tbl { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+  .roster-tbl th, .roster-tbl td { border: 1px solid #333; padding: .6rem .8rem; text-align: left; }
+  .roster-tbl th { background: #f5f5f5; font-weight: 700; }
+  @media print {
+    .print-btn-bar { display: none !important; }
+    .print-page { border: none; box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="print-btn-bar">
+  <button onclick="window.print()" class="btn primary">🖨️ Print Speaker List (वक्ता सूची प्रिन्ट गर्नुहोस्)</button>
+  <a href="{{ url_for('rosters_list') }}" class="btn">← Back to Rosters</a>
+</div>
+
+<div class="print-page">
+  <div class="letterhead-header">
+    <div class="letterhead-nep">नेपाल ... संसदीय दलको कार्यालय</div>
+    <div class="letterhead-en">PARLIAMENTARY PARTY OFFICE · SECRETARIAT</div>
+    <div class="letterhead-sub">{{ HOUSE_LABELS.get(house, house) }} · सिंहदरबार, काठमाडौँ</div>
+  </div>
+
+  <div class="letter-meta">
+    <div>
+      <div><strong>पत्र संख्या:</strong> स.द.व.२०८१/०२</div>
+      <div><strong>चलानी नं.:</strong> {{ rosters|length }}/२०८१</div>
+    </div>
+    <div style="text-align: right;">
+      <div><strong>मिति (वि.सं.):</strong> {{ session_date|bs_date }}</div>
+      <div><strong>मिति (ई.सं.):</strong> {{ session_date }}</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 1.2rem; line-height: 1.6;">
+    <div><strong>श्रीमान् सचिवज्यू,</strong></div>
+    <div>सभामुख/अध्यक्षज्यूको सचिवालय,</div>
+    <div>{{ HOUSE_LABELS.get(house, house) }} सचिवालय, काठमाडौँ।</div>
+  </div>
+
+  <div class="letter-subj">
+    विषय: सदनको बैठकमा दलको तर्फबाट बोल्ने वक्ताहरूको नामावली सम्बन्धमा।
+  </div>
+
+  <p style="text-align: justify; line-height: 1.7;">
+    महोदय,<br>
+    प्रस्तुत विषयमा, {{ HOUSE_LABELS.get(house, house) }}को आज मिति <strong>{{ session_date }} ({{ session_date|bs_date }})</strong> का दिन बस्ने सदनको बैठकमा शून्य समय, विशेष समय तथा विधेयकमाथिको छलफलमा दलको तर्फबाट निम्नानुसारका माननीय सदस्यहरूले सम्बोधन गर्नुहुने व्यहोरा अनुरोध छ। समय व्यवस्थापनका लागि आधिकारिक नामावली यसै पत्रसाथ संलग्न गरी पठाइएको छ:
+  </p>
+
+  <table class="roster-tbl">
+    <thead>
+      <tr>
+        <th style="width: 40px; text-align: center;">क्र.सं.</th>
+        <th>माननीय सदस्यको नाम (MP Name)</th>
+        <th>निर्वाचन क्षेत्र / जिल्ला</th>
+        <th>सत्र प्रकार</th>
+        <th style="width: 80px; text-align: center;">समय</th>
+        <th>सम्बोधनको विषय (Topic)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rosters %}
+      <tr>
+        <td style="text-align: center;">{{ loop.index }}</td>
+        <td>
+          <strong>{{ r.mp_name }}</strong>
+          {% if r.name_ne %}<small style="display: block;">{{ r.name_ne }}</small>{% endif %}
+        </td>
+        <td>{{ r.constituency or r.district or '—' }}</td>
+        <td>{{ r.session_type }}</td>
+        <td style="text-align: center;"><strong>{{ r.allocated_minutes }} मिनेट</strong></td>
+        <td>{{ r.topic }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: #777;">यस मितिमा कुनै वक्ता दर्ता गरिएको छैन।</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="font-size: .95rem; margin-top: 1.5rem;">
+    उल्लिखित माननीय सदस्यहरूलाई कार्यव्यवस्था परामर्श समितिको निर्णय बमोजिम तोकिएको समय प्रदान गरिदिनुहुन हार्दिक अनुरोध गर्दछु।
+  </p>
+
+  <div class="sig-section">
+    <div class="sig-block">
+      <div class="sig-line">
+        (..............................................)<br>
+        <strong>प्रमुख सचेतक / सचेतक</strong><br>
+        संसदीय दलको कार्यालय<br>
+        {{ HOUSE_LABELS.get(house, house) }}
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

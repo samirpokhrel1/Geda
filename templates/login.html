@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'लगइन' if language == 'ne' else 'Login' }}{% endblock %}
+{% block content %}
+<div class="login login-nepal">
+  <div class="login-crest">
+    <div class="login-flag">नेपाल</div>
+    <h1>संसदीय दलको कार्यालय</h1>
+    <p class="login-en">{{ 'संसदीय दलको कार्यालय · सदस्य व्यवस्थापन' if language == 'ne' else 'Parliamentary Party Office · Member Management' }}</p>
+    <p class="muted">प्रतिनिधि सभा · राष्ट्रिय सभा · प्रदेश सभाहरू</p>
+  </div>
+  <form method="post" class="card form" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+    <label class="field"><span>Email (इमेल)</span><input type="email" name="email" autofocus required autocomplete="username"></label>
+    <label class="field"><span>Password (पासवर्ड)</span><input type="password" name="password" required autocomplete="current-password"></label>
+    <div class="actions"><button class="btn primary">Log in (प्रवेश गर्नुहोस्)</button></div>
+  </form>
+  {% if demo %}
+  <div class="card">
+    <h3>Demo accounts (परीक्षण खाता)</h3>
+    <p class="muted">Password for all: <code>demo1234</code>. Set <code>PMS_DEMO=0</code> to hide this box.</p>
+    <table class="tbl"><tbody>
+    {% for u in demo %}<tr><td>{{ u.email }}</td><td>{{ ROLES[u.role] }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

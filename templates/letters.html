@@ -1,0 +1,60 @@
+{% extends 'base.html' %}{% block title %}Correspondence · आगत/प्रेषित पत्र{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">संसदीय दलको कार्यालय · DARTA / CHALANI</span>
+    <h1>आगत तथा प्रेषित पत्र · Office correspondence</h1>
+    <p class="muted">Incoming and outgoing letters of the parliamentary party office (secretariat, ministries, party centre).</p>
+  </div>
+  {% if can('letter.manage') %}
+  <a class="btn primary" href="{{ url_for('letter_new') }}">+ Register letter</a>
+  {% endif %}
+</div>
+<div class="card">
+  <form method="get" class="filters">
+    <select name="direction">
+      <option value="">— All —</option>
+      {% for d in LETTER_DIRECTIONS %}
+      <option value="{{ d }}" {{ 'selected' if sel_direction==d }}>{{ LETTER_DIRECTION_LABELS.get(d, d) }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn">Filter</button>
+  </form>
+</div>
+<div class="card tablewrap">
+  {% if letters %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Ref.</th>
+        <th>Date</th>
+        <th>Direction</th>
+        <th>Subject</th>
+        <th>From / To</th>
+        <th>Category</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for l in letters %}
+      <tr>
+        <td><code>{{ l.ref_no }}</code></td>
+        <td>{{ l.letter_date }}</td>
+        <td>{{ LETTER_DIRECTION_LABELS.get(l.direction, l.direction) }}</td>
+        <td><strong>{{ l.subject }}</strong>
+          {% if l.notes %}<small class="d-block muted">{{ l.notes }}</small>{% endif %}</td>
+        <td>
+          <small class="d-block">From: {{ l.from_party or '—' }}</small>
+          <small>To: {{ l.to_party or '—' }}</small>
+        </td>
+        <td>{{ l.category }}</td>
+        <td><span class="badge">{{ l.status }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="pad muted">No letters registered.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends 'base.html' %}{% block title %}Dashboard · संसदीय दलको कार्यालय{% endblock %}
+{% block content %}
+<div class="dash-hero">
+  <div class="dash-hero-text">
+    <div class="dash-subtitle">संसदीय दलको कार्यालय · PARLIAMENTARY PARTY OFFICE</div>
+    <h1>संसदीय दल ड्यासबोर्ड · Overview</h1>
+    <p class="muted">Federal Parliament (प्रतिनिधि सभा र राष्ट्रिय सभा) तथा ७ वटै प्रदेश सभाहरू (Koshi, Madhesh, Bagmati, Gandaki, Lumbini, Karnali, Sudurpashchim)</p>
+  </div>
+  <div class="dash-hero-date">
+    <div class="bs-box">
+      <span class="bs-lbl">नेपाली मिति (वि.सं.)</span>
+      <strong class="bs-val">{{ bs_today }}</strong>
+      <span class="ad-val">AD: {{ today }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- MP Strength & Legislative Representation -->
+<div class="section-title">
+  <h2>🏛️ दलको संसदीय उपस्थिति · Party Strength Across Assemblies</h2>
+  <a href="{{ url_for('members_list') }}" class="btn-sm">View All MPs (सबै सांसदहरू) →</a>
+</div>
+<div class="stats stats-nepal">
+  <a class="stat stat-primary" href="{{ url_for('members_list') }}">
+    <b>{{ mp_stats.total }}</b>
+    <span>Total Party MPs (जम्मा सांसद)</span>
+  </a>
+  <a class="stat" href="{{ url_for('members_list', house='House of Representatives') }}">
+    <b>{{ mp_stats.hor }}</b>
+    <span>House of Reps (प्रतिनिधि सभा)</span>
+  </a>
+  <a class="stat" href="{{ url_for('members_list', house='National Assembly') }}">
+    <b>{{ mp_stats.na }}</b>
+    <span>National Assembly (राष्ट्रिय सभा)</span>
+  </a>
+  <a class="stat" href="{{ url_for('members_list') }}">
+    <b>{{ mp_stats.province }}</b>
+    <span>Province Assemblies (प्रदेश सभा)</span>
+  </a>
+  <a class="stat stat-sub" href="{{ url_for('members_list', election_type='FPTP') }}">
+    <b>{{ mp_stats.fptp }}</b>
+    <span>Direct (प्रत्यक्ष FPTP)</span>
+  </a>
+  <a class="stat stat-sub" href="{{ url_for('members_list', election_type='PR') }}">
+    <b>{{ mp_stats.pr }}</b>
+    <span>Proportional (समानुपातिक PR)</span>
+  </a>
+</div>
+
+<!-- Samsadiya Dal Core Workflows: Whips & Floor Speakers -->
+<div class="grid2">
+  <!-- Active Whips -->
+  <section class="card">
+    <div class="card-head">
+      <h2>⚖️ ह्वीप तथा दलको निर्देशन · Active Whips</h2>
+      <a href="{{ url_for('whips_list') }}" class="btn-sm">All Whips →</a>
+    </div>
+    {% if upcoming_whips %}
+    <div class="whip-feed">
+      {% for w in upcoming_whips %}
+      <div class="whip-card whip-{{ w.whip_type|lower }}">
+        <div class="whip-card-top">
+          <span class="badge badge-whip-{{ '3' if w.whip_type=='Three-line' else ('2' if w.whip_type=='Two-line' else '1') }}">
+            {{ w.whip_type }} Whip
+          </span>
+          <span class="whip-ref">{{ w.ref_no }}</span>
+          <span class="whip-date">📅 {{ w.voting_date|bs_date }}</span>
+        </div>
+        <a href="{{ url_for('whip_view', wid=w.id) }}" class="whip-title">{{ w.title }}</a>
+        <div class="whip-card-sub">
+          <span><strong>सभा:</strong> {{ HOUSE_LABELS.get(w.house, w.house) }}</span> · 
+          <span class="directive-highlight"><strong>निर्देशन:</strong> {{ WHIP_DIRECTIVE_LABELS.get(w.directive, w.directive) }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No active whips issued right now.</p>
+    {% endif %}
+    {% if can('whip.issue') %}
+    <div class="card-footer">
+      <a href="{{ url_for('whip_new') }}" class="btn primary">+ Issue New Whip (ह्वीप जारी गर्नुहोस्)</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Today's Floor Speakers Roster -->
+  <section class="card">
+    <div class="card-head">
+      <h2>🎙️ आजको सदन वक्ता सूची · Today's Floor Speakers</h2>
+      <a href="{{ url_for('rosters_list') }}" class="btn-sm">Roster View →</a>
+    </div>
+    {% if today_rosters %}
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>समय/सत्र</th>
+          <th>वक्ता माननीय</th>
+          <th>विषय / बुँदा</th>
+          <th>स्थिति</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in today_rosters %}
+        <tr>
+          <td>
+            <span class="badge">{{ r.session_type }}</span>
+            <small class="d-block muted">{{ r.allocated_minutes }} मिनेट</small>
+          </td>
+          <td>
+            <strong>{{ r.mp_name }}</strong>
+            <small class="d-block muted">{{ r.constituency or r.mp_house }}</small>
+          </td>
+          <td>{{ r.topic }}</td>
+          <td><span class="badge s-{{ r.status|slug }}">{{ r.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No floor speakers scheduled for today.</p>
+    {% endif %}
+    {% if can('roster.manage') %}
+    <div class="card-footer">
+      <a href="{{ url_for('roster_new') }}" class="btn">+ Schedule Floor Speaker (वक्ता निर्धारण)</a>
+      <a href="{{ url_for('roster_print') }}" target="_blank" class="btn">Print Official Speaker List 🖨️</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<!-- Bills & Constitutional Leave Compliance -->
+<div class="grid2">
+  <!-- High Priority Bills -->
+  <section class="card">
+    <div class="card-head">
+      <h2>📜 मुख्य विधेयकहरू · Priority Bills</h2>
+      <a href="{{ url_for('bills_list') }}" class="btn-sm">All Bills ({{ stats.active }}) →</a>
+    </div>
+    {% if high %}
+    <table class="tbl">
+      <tbody>
+        {% for b in high %}
+        <tr>
+          <td>
+            <a href="{{ url_for('bill_view', bid=b.id) }}"><strong>{{ b.title }}</strong></a>
+            {% if b.nepali_title %}<small class="d-block text-nepali">{{ b.nepali_title }}</small>{% endif %}
+            <small class="muted">{{ HOUSE_LABELS.get(b.house, b.house) }}</small>
+          </td>
+          <td><span class="badge s-{{ b.status|slug }}">{{ b.status }}</span></td>
+          <td>
+            <span class="badge p-{{ b.priority|slug }}">{{ b.party_position }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nothing high-priority right now.</p>
+    {% endif %}
+  </section>
+
+  <!-- Constitutional Leave Tracking (Art. 89(d)) -->
+  <section class="card">
+    <div class="card-head">
+      <h2>📅 सांसद बिदा तथा हाजिरी · Leave Watch (Art. 89(d))</h2>
+      <a href="{{ url_for('leaves_list') }}" class="btn-sm">Leave Management →</a>
+    </div>
+    <div class="art-alert">
+      <small>⚠️ <strong>नेपालको संविधान धारा ८९(घ):</strong> सदनलाई सूचना नदिई लगातार १० वटा बैठकमा अनुपस्थित रहेमा सांसद पद रिक्त हुनेछ।</small>
+    </div>
+    {% if active_leaves %}
+    <table class="tbl">
+      <tbody>
+        {% for l in active_leaves %}
+        <tr>
+          <td>
+            <strong>{{ l.mp_name }}</strong>
+            <small class="d-block muted">{{ l.constituency }}</small>
+          </td>
+          <td><span class="badge">{{ l.leave_type }}</span></td>
+          <td>{{ l.days_count }} दिन ({{ l.start_date }} देखि {{ l.end_date }})</td>
+          <td><span class="badge s-position-decided">{{ l.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No approved leaves active today.</p>
+    {% endif %}
+    {% if art89_watch %}
+    <div class="art-alert" style="margin-top:.8rem">
+      <strong>{{ art89_watch|length }}</strong> MP(s) on consecutive-absence watch.
+      <a href="{{ url_for('office_desk') }}">Open Dal Office Desk →</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<!-- Meetings & Tasks & Recent Activity -->
+<div class="grid2">
+  <section class="card">
+    <div class="card-head">
+      <h2>🤝 आगामी बैठकहरू · Upcoming Meetings</h2>
+      <a href="{{ url_for('meetings_list') }}" class="btn-sm">All Meetings →</a>
+    </div>
+    {% if meetings %}
+    <table class="tbl">
+      <tbody>
+        {% for m in meetings %}
+        <tr>
+          <td>
+            <a href="{{ url_for('meeting_view', mid=m.id) }}"><strong>{{ m.title }}</strong></a>
+            <small class="d-block muted">{{ m.location or 'दलको कार्यालय, सिंहदरबार' }}</small>
+          </td>
+          <td class="muted">{{ m.date|fdt }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No upcoming meetings.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>📋 Overdue Tasks & Activity</h2>
+      <a href="{{ url_for('tasks_list') }}" class="btn-sm">Tasks ({{ stats.open_tasks }}) →</a>
+    </div>
+    {% if overdue %}
+    <table class="tbl">
+      <tbody>
+        {% for t in overdue %}
+        <tr>
+          <td>{{ t.title }}</td>
+          <td class="muted">{{ t.owner or '—' }}</td>
+          <td class="late">{{ t.deadline }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% elif recent %}
+    <ul class="feed">
+      {% for l in recent[:6] %}
+      <li>
+        <strong>{{ l.actor or 'System' }}</strong> {{ l.action }}
+        {% if l.detail %} — <span class="muted">{{ l.detail }}</span>{% endif %}
+        <small>{{ l.timestamp|fdt }}</small>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No overdue tasks or recent activity.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

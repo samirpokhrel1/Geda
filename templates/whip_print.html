@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<title>ह्वीप पत्र · {{ whip.ref_no }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  body { background: #fff; color: #000; font-family: system-ui, -apple-system, 'Mukta', 'Preeti', sans-serif; }
+  .print-page { max-width: 800px; margin: 2rem auto; padding: 2.5rem; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .letterhead-header { text-align: center; border-bottom: 2px solid #8b1e2b; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .letterhead-nep { font-size: 1.6rem; font-weight: 700; color: #8b1e2b; line-height: 1.2; }
+  .letterhead-en { font-size: 1.1rem; font-weight: 600; color: #16284f; }
+  .letterhead-sub { font-size: .95rem; color: #555; }
+  .letter-meta { display: flex; justify-content: space-between; font-size: .95rem; margin-bottom: 1.5rem; }
+  .letter-subj { text-align: center; font-size: 1.2rem; font-weight: 700; text-decoration: underline; margin: 1.5rem 0; }
+  .letter-body { font-size: 1.05rem; line-height: 1.8; text-align: justify; margin-bottom: 2rem; }
+  .order-box { background: #fdf5f5; border: 2px solid #8b1e2b; border-radius: 8px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+  .order-box strong { font-size: 1.15rem; color: #8b1e2b; display: block; margin-bottom: .4rem; }
+  .sig-section { display: flex; justify-content: flex-end; margin-top: 3.5rem; text-align: center; }
+  .sig-block { width: 250px; }
+  .sig-line { border-top: 1px solid #000; margin-top: 3.5rem; padding-top: .4rem; font-weight: 600; }
+  .print-btn-bar { max-width: 800px; margin: 1rem auto; display: flex; justify-content: space-between; }
+  @media print {
+    .print-btn-bar { display: none !important; }
+    .print-page { border: none; box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="print-btn-bar">
+  <button onclick="window.print()" class="btn primary">🖨️ Print / Save as PDF (प्रिन्ट गर्नुहोस्)</button>
+  <a href="{{ url_for('whip_view', wid=whip.id) }}" class="btn">← Back to Workspace</a>
+</div>
+
+<div class="print-page">
+  <div class="letterhead-header">
+    <div class="letterhead-nep">नेपाल ... संसदीय दलको कार्यालय</div>
+    <div class="letterhead-en">PARLIAMENTARY PARTY OFFICE</div>
+    <div class="letterhead-sub">{{ HOUSE_LABELS.get(whip.house, whip.house) }} · सिंहदरबार, काठमाडौँ</div>
+  </div>
+
+  <div class="letter-meta">
+    <div>
+      <div><strong>पत्र संख्या:</strong> {{ whip.ref_no }}</div>
+      <div><strong>चलानी नं.:</strong> {{ whip.id }}/२०८१</div>
+    </div>
+    <div style="text-align: right;">
+      <div><strong>मिति (वि.सं.):</strong> {{ whip.voting_date|bs_date }}</div>
+      <div><strong>मिति (ई.सं.):</strong> {{ whip.voting_date }}</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 1rem;">
+    <div><strong>श्रीमान्/श्रीमती सम्पूर्ण माननीय सदस्यज्यूहरू,</strong></div>
+    <div>संसदीय दल, {{ HOUSE_LABELS.get(whip.house, whip.house) }}।</div>
+  </div>
+
+  <div class="letter-subj">
+    विषय: आधिकारिक ह्वीप ({{ whip.whip_type }} Whip) जारी गरिएको सम्बन्धमा।
+  </div>
+
+  <div class="letter-body">
+    <p>
+      उपरोक्त सम्बन्धमा, {{ HOUSE_LABELS.get(whip.house, whip.house) }}को आगामी बैठक मिति <strong>{{ whip.voting_date }} ({{ whip.voting_date|bs_date }})</strong> का दिन <strong>{{ whip.voting_time or '१:००' }}</strong> बजे बस्ने कार्यसूचीमा <strong>"{{ whip.title }}"</strong> सम्बन्धी प्रस्ताव निर्णयार्थ पेश हुने कार्यक्रम रहेको छ।
+    </p>
+
+    <div class="order-box">
+      <strong>ह्वीपको निर्देशन (OFFICIAL PARTY DIRECTIVE):</strong>
+      <div>{{ whip.agenda }}</div>
+      <div style="margin-top: .6rem; font-weight: 700; color: #16284f;">
+        मतदान निर्देशन: {{ WHIP_DIRECTIVE_LABELS.get(whip.directive, whip.directive) }}
+      </div>
+    </div>
+
+    <p>
+      तसर्थ, <strong>{{ whip.legal_basis }}</strong> बमोजिम दलका सम्पूर्ण माननीय सदस्यहरू तोकिएको समय अगावै सभा कक्षमा अनिवार्य उपस्थित भई दलको आधिकारिक निर्णय र निर्देशन बमोजिम मतदान प्रक्रियामा सहभागी हुनुहुन यो <strong>{{ whip.whip_type }} ह्वीप</strong> जारी गरिएको छ।
+    </p>
+
+    <p style="font-size: .95rem; color: #444; border-left: 3px solid #8b1e2b; padding-left: .8rem;">
+      <strong>स्मरण रहोस्:</strong> ह्वीपको उल्लंघन गरेमा, अनुपस्थित रहेमा वा ह्वीप विपरित मतदान गरेमा राजनीतिक दल सम्बन्धी ऐन, २०७३ को दफा ३१ र ३२ तथा दलको विधान बमोजिम दल त्याग गरेको मानी सांसद पद खारेजी सम्मको कारबाहीका लागि सम्बन्धित निकायमा लेखी पठाइने व्यहोरा समेत अवगत गराइन्छ।
+    </p>
+  </div>
+
+  <div class="sig-section">
+    <div class="sig-block">
+      <div class="sig-line">
+        (..............................................)<br>
+        <strong>{{ whip.issuer_name or 'प्रमुख सचेतक (Chief Whip)' }}</strong><br>
+        प्रमुख सचेतक / सचेतक<br>
+        संसदीय दलको कार्यालय
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 3rem; border-top: 1px dashed #ccc; padding-top: 1rem; font-size: .85rem; color: #666;">
+    <strong>बोधार्थ तथा कार्यार्थ:</strong><br>
+    १. सम्माननीय संसदीय दलको नेताज्यूको सचिवालय।<br>
+    २. दलका सम्पूर्ण माननीय सदस्यज्यूहरू (व्यक्तिगत अभिलेख)।<br>
+    ३. कार्यालय अभिलेख मिसिल।
+  </div>
+</div>
+</body>
+</html>

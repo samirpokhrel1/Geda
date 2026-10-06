@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<title>संसदीय दलको नामावली</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  body { background:#fff; margin:1.5rem; font: 13px/1.45 'Mukta', system-ui, sans-serif; }
+  .print-head { border-bottom: 3px solid #8b1e2b; padding-bottom: .8rem; margin-bottom: 1.2rem; }
+  .print-head h1 { margin: 0; color: #16284f; }
+  .print-head small { color: #647087; }
+  h2 { color: #8b1e2b; margin: 1.4rem 0 .5rem; font-size: 1.05rem; }
+  @media print { .no-print { display: none; } }
+</style>
+</head>
+<body>
+<div class="print-head">
+  <small>संसदीय दलको कार्यालय · Parliamentary Party Office · Nepal</small>
+  <h1>दलको सांसद नामावली · Official member roster</h1>
+  <small>Printed {{ printed_at }} · For internal party use only</small>
+</div>
+<p class="no-print"><button class="btn primary" onclick="window.print()">Print</button>
+<a class="btn" href="{{ url_for('members_list') }}">Back</a></p>
+{% for house, mps in grouped %}
+<h2>{{ HOUSE_LABELS.get(house, house) }} ({{ mps|length }})</h2>
+<table class="tbl">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>नेपाली नाम</th>
+      <th>Role</th>
+      <th>Constituency / district</th>
+      <th>Election</th>
+      <th>Cluster</th>
+      <th>Contact</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for m in mps %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ m.name }}</td>
+      <td>{{ m.name_ne or '' }}</td>
+      <td>{{ m.dal_role }}</td>
+      <td>{{ m.constituency or '' }}{% if m.district %} / {{ m.district }}{% endif %}</td>
+      <td>{{ m.election_type }}</td>
+      <td>{{ m.pr_cluster }}</td>
+      <td>{{ m.contact or '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+</body>
+</html>

@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}MP Leave & Attendance (सांसद बिदा तथा हाजिरी अनुगमन){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">नेपालको संविधान धारा ८९(घ) बमोजिम अनुगमन · ATTENDANCE COMPLIANCE</span>
+    <h1>सांसद बिदा तथा हाजिरी अनुगमन · Leave Management</h1>
+    <p class="muted">Article 89(d) Consecutive Absence Threshold & Chief Whip Leave Approvals</p>
+  </div>
+  <div class="row">
+    {% if can('leave.apply') %}
+    <a class="btn primary" href="{{ url_for('leave_new') }}">+ Submit Leave Application (बिदाको निवेदन दर्ता)</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="art-alert-card">
+  <div class="art-alert-icon">⚠️</div>
+  <div class="art-alert-text">
+    <strong>संवैधानिक प्रावधान (Article 89(d) of Constitution of Nepal):</strong>
+    "सदनलाई सूचना नदिई लगातार १० वटा बैठकमा अनुपस्थित रहेमा त्यस्तो सदस्यको स्थान रिक्त हुनेछ।"<br>
+    संसदीय दलको कार्यालयले कुनै पनि सांसदको लगातार अनुपस्थिति १० बैठक नपुगोस् भनी अनिवार्य बिदा स्वीकृति र संसद सचिवालयमा समयमै सूचना दर्ता सुनिश्चित गर्दछ।
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>{{ stats.total }}</b><span>Total Leaves Recorded</span></div>
+  <div class="stat stat-primary"><b>{{ stats.active_today }}</b><span>Currently on Leave</span></div>
+  <div class="stat warn"><b>{{ stats.pending }}</b><span>Pending Approval</span></div>
+</div>
+
+<!-- Watchlist of high absence counts -->
+<div class="card">
+  <h2>🚨 १०-बैठक जोखिम अनुगमन सूची · Absence Risk Watchlist (Art. 89(d))</h2>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>माननीय सांसद</th>
+        <th>सभा / निर्वाचन क्षेत्र</th>
+        <th>कुल स्वीकृत बिदा दिन</th>
+        <th>बिदा पटक संख्या</th>
+        <th>जोखिम मूल्यांकन (Risk Level)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in watchlist %}
+      <tr>
+        <td>
+          <a href="{{ url_for('member_view', pid=w.id) }}"><strong>{{ w.name }}</strong></a>
+          {% if w.name_ne %}<small class="d-block text-nepali">{{ w.name_ne }}</small>{% endif %}
+        </td>
+        <td>{{ w.constituency or w.house }}</td>
+        <td><strong>{{ w.total_leave_days }} दिन</strong></td>
+        <td>{{ w.leaves_count }} पटक</td>
+        <td>
+          {% if w.total_leave_days >= 8 %}
+          <span class="badge p-high">⚠️ High Attention (सचिवालयमा सूचना अनिवार्य)</span>
+          {% elif w.total_leave_days >= 4 %}
+          <span class="badge p-medium">Moderate Notice</span>
+          {% else %}
+          <span class="badge s-position-decided">Normal Safe</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- All Leaves Records -->
+<div class="card tablewrap">
+  <div class="page-head" style="margin-bottom: .6rem;">
+    <h2>📋 बिदा आवेदन तथा अभिलेख · Leave Applications</h2>
+    <div class="row">
+      <a href="{{ url_for('leaves_list') }}" class="btn-sm {{ 'primary' if not sel_status }}">All</a>
+      <a href="{{ url_for('leaves_list', status='Approved') }}" class="btn-sm {{ 'primary' if sel_status=='Approved' }}">Approved</a>
+      <a href="{{ url_for('leaves_list', status='Pending') }}" class="btn-sm {{ 'primary' if sel_status=='Pending' }}">Pending</a>
+    </div>
+  </div>
+
+  {% if leaves %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>माननीय सांसद</th>
+        <th>बिदाको प्रकार</th>
+        <th>मिति अवधि (Duration)</th>
+        <th>कुल दिन</th>
+        <th>बिदाको कारण / व्यहोरा (Reason)</th>
+        <th>स्वीकृति विवरण</th>
+        <th>स्थिति</th>
+        {% if can('leave.manage') %}<th>कारवाही</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in leaves %}
+      <tr>
+        <td>
+          <a href="{{ url_for('member_view', pid=l.parliamentarian_id) }}"><strong>{{ l.mp_name }}</strong></a>
+          {% if l.name_ne %}<small class="d-block text-nepali">{{ l.name_ne }}</small>{% endif %}
+          <small class="muted">{{ l.constituency or l.house }}</small>
+        </td>
+        <td><span class="badge">{{ l.leave_type }}</span></td>
+        <td>
+          <strong>{{ l.start_date }}</strong> देखि <strong>{{ l.end_date }}</strong>
+        </td>
+        <td><strong>{{ l.days_count }} दिन</strong></td>
+        <td>{{ l.reason }}</td>
+        <td><small>{{ l.approver_name or '—' }}</small></td>
+        <td><span class="badge s-{{ l.status|slug }}">{{ l.status }}</span></td>
+        {% if can('leave.manage') %}
+        <td>
+          {% if l.status == 'Pending' %}
+          <form method="post" action="{{ url_for('leave_approve', lid=l.id) }}" style="display: inline-block;">
+            <input type="hidden" name="_csrf" value="{{ csrf() }}">
+            <button class="btn-sm primary">Approve</button>
+          </form>
+          <form method="post" action="{{ url_for('leave_reject', lid=l.id) }}" style="display: inline-block;">
+            <input type="hidden" name="_csrf" value="{{ csrf() }}">
+            <button class="btn-sm danger">Reject</button>
+          </form>
+          {% else %}
+          <span class="muted">Processed</span>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="pad muted">No leave applications found.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block title %}Question{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ r.subject or 'Parliamentary question' }}</h1><span class="badge">{{ r.status }}</span></div>
+<div class="row">{% if editable %}<a class="btn" href="{{ url_for('question_edit', qid=r.id) }}">Edit / respond</a>{% endif %}<a class="btn" href="{{ url_for('questions_list') }}">← Questions</a></div></div>
+<section class="card"><dl class="kv">
+  <dt>Question</dt><dd class="pre">{{ r.question }}</dd>
+  <dt>Parliamentarian</dt><dd>{{ r.mp_name or '—' }}</dd><dt>Ministry</dt><dd>{{ r.ministry or '—' }}</dd>
+  <dt>Submitted</dt><dd>{{ r.submitted_date or '—' }}</dd>
+  <dt>Response</dt><dd class="pre">{{ r.response or 'No response recorded.' }}</dd>
+  <dt>Follow-up</dt><dd class="pre">{{ r.follow_up or '—' }}</dd></dl></section>
+<section class="card"><h2>History</h2><ul class="feed">{% for l in logs %}<li><strong>{{ l.actor or 'System' }}</strong> {{ l.action }}{% if l.detail %} — <span class="muted">{{ l.detail }}</span>{% endif %}<small>{{ l.timestamp|fdt }}</small></li>{% else %}<li class="muted">No history.</li>{% endfor %}</ul></section>
+{% endblock %}

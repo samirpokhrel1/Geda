@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}{{ m.title }} · दलको बैठक{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">{{ m.meeting_category or 'संसदीय दलको बैठक' }}</span>
+    <h1>{{ m.title }}</h1>
+    <div class="row">
+      <span class="badge">{{ m.status }}</span>
+      {% if m.house %}<span class="badge badge-house">{{ HOUSE_LABELS.get(m.house, m.house) }}</span>{% endif %}
+      <span class="badge">{{ m.date|fdt }} ({{ m.date[:10]|bs_date }})</span>
+    </div>
+  </div>
+  <div class="row">
+    <a class="btn primary" href="{{ url_for('meeting_print', mid=m.id) }}" target="_blank">Print Minutes (निर्णय प्रिन्ट) 🖨️</a>
+    {% if can('meeting.manage') %}
+    <a class="btn" href="{{ url_for('meeting_edit', mid=m.id) }}">Edit / minutes</a>
+    {% endif %}
+    <a class="btn" href="{{ url_for('meetings_list') }}">← Meetings</a>
+  </div>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h2>📋 बैठक विवरण · Details</h2>
+    <dl class="kv">
+      <dt>Date & time</dt><dd><strong>{{ m.date|fdt }}</strong> ({{ m.date[:10]|bs_date }})</dd>
+      <dt>Location</dt><dd>{{ m.location or 'दलको कार्यालय, सिंहदरबार' }}</dd>
+      <dt>Assembly / House</dt><dd>{{ HOUSE_LABELS.get(m.house, m.house or 'All Assemblies') }}</dd>
+      <dt>Meeting Type</dt><dd>{{ m.meeting_category or 'Samsadiya Dal Meeting' }}</dd>
+      <dt>Committee</dt><dd>{% if m.committee_id %}<a href="{{ url_for('committee_view', cid=m.committee_id) }}">{{ m.committee_name }}</a>{% else %}—{% endif %}</dd>
+      <dt>Related bill</dt><dd>{% if m.bill_id %}<a href="{{ url_for('bill_view', bid=m.bill_id) }}">{{ m.bill_title }}</a>{% else %}—{% endif %}</dd>
+      <dt>Participants</dt><dd class="pre">{{ m.participants or '—' }}</dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>🎯 कार्यसूची · Agenda</h2>
+    <p class="pre">{{ m.agenda or 'No agenda recorded.' }}</p>
+
+    <h2 style="margin-top: 1.5rem;">📜 औपचारिक निर्णयहरू · Decisions & Resolutions</h2>
+    <p class="pre big">{{ m.decisions or 'No decisions recorded yet.' }}</p>
+
+    {% if m.minutes %}
+    <h2 style="margin-top: 1.5rem;">📝 माइन्युट व्यहोरा · Minutes</h2>
+    <p class="pre muted">{{ m.minutes }}</p>
+    {% endif %}
+  </section>
+</div>
+
+<!-- Meeting Attendance Roll Call -->
+<div class="card">
+  <div class="page-head" style="margin-bottom: .6rem;">
+    <h2>👥 माननीय सांसदहरूको उपस्थिति · Meeting Roll Call</h2>
+    <span class="muted">Recorded: {{ attendance|length }} MPs</span>
+  </div>
+
+  {% if can('meeting.manage') %}
+  <form method="post" action="{{ url_for('meeting_attendance', mid=m.id) }}" class="row" style="margin-bottom: 1rem; background: #fafbfc; padding: .6rem .8rem; border-radius: 6px; border: 1px solid var(--line);">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <select name="parliamentarian_id" required>
+      <option value="">— Select MP to record attendance —</option>
+      {% for mp in mps %}
+      <option value="{{ mp.id }}">{{ mp.name }} ({{ mp.constituency or 'MP' }})</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="Present">उपस्थित (Present)</option>
+      <option value="Absent">अनुपस्थित (Absent)</option>
+      <option value="Leave Approved">स्वीकृत बिदा (Leave Approved)</option>
+    </select>
+    <input name="remarks" placeholder="कैफियत / भूमिका...">
+    <button class="btn primary">Record Attendance</button>
+  </form>
+  {% endif %}
+
+  {% if attendance %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>माननीय सांसद</th>
+        <th>निर्वाचन क्षेत्र</th>
+        <th>हाजिरी स्थिति</th>
+        <th>कैफियत</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in attendance %}
+      <tr>
+        <td>
+          <strong>{{ a.mp_name }}</strong>
+          {% if a.name_ne %}<small class="d-block text-nepali">{{ a.name_ne }}</small>{% endif %}
+        </td>
+        <td>{{ a.constituency or '—' }}</td>
+        <td>
+          <span class="badge {{ 's-position-decided' if a.status=='Present' else ('p-high' if a.status=='Absent' else 'muted') }}">
+            {{ a.status }}
+          </span>
+        </td>
+        <td><small class="muted">{{ a.remarks or '—' }}</small></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No individual attendance roll call recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

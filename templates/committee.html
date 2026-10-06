@@ -1,0 +1,27 @@
+{% extends 'base.html' %}{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ c.name }}</h1><span class="muted">{{ c.house or '' }}</span></div><a class="btn" href="{{ url_for('committees_list') }}">← Committees</a></div>
+<p>{{ c.description or '' }}</p>
+<div class="grid2">
+<section class="card"><h2>Members</h2>
+  {% if members %}<table class="tbl"><tbody>{% for m in members %}<tr><td>{{ m.name }}</td><td class="muted">{{ m.role }}</td>
+    <td>{% if can('committee.manage') %}<form method="post" action="{{ url_for('committee_member_remove', cid=c.id, pid=m.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="linkbtn">Remove</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table>
+  {% else %}<p class="muted">No members yet.</p>{% endif %}
+  {% if can('committee.manage') and candidates %}
+  <form method="post" action="{{ url_for('committee_member_add', cid=c.id) }}" class="row">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <select name="parliamentarian_id">{% for p in candidates %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select>
+    <input name="role" value="Member" maxlength="60" style="width:7rem">
+    <button class="btn">Add</button></form>{% endif %}
+</section>
+<section class="card"><h2>Related bills</h2>
+  {% if bills %}<table class="tbl"><tbody>{% for b in bills %}<tr><td><a href="{{ url_for('bill_view', bid=b.id) }}">{{ b.title }}</a></td><td><span class="badge s-{{ b.status|slug }}">{{ b.status }}</span></td></tr>{% endfor %}</tbody></table>
+  {% else %}<p class="muted">No bills referred.</p>{% endif %}
+</section>
+<section class="card"><h2>Meetings</h2>
+  {% if can('meeting.manage') %}<p><a href="{{ url_for('meeting_new', committee=c.id) }}">+ Schedule meeting</a></p>{% endif %}
+  {% if meetings %}<table class="tbl"><tbody>{% for m in meetings %}<tr><td><a href="{{ url_for('meeting_view', mid=m.id) }}">{{ m.title }}</a></td><td class="muted">{{ m.date|fdt }}</td><td>{{ m.status }}</td></tr>{% endfor %}</tbody></table>
+  {% else %}<p class="muted">No meetings.</p>{% endif %}
+</section>
+</div>
+{% endblock %}

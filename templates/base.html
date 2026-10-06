@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="{{ 'ne' if language == 'ne' else 'en' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} · {{ 'संसदीय दलको कार्यालय' if language == 'ne' else 'Parliamentary Party Office' }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script defer src="{{ url_for('static', filename='i18n.js') }}"></script>
+</head>
+<body>
+{% if g.user %}
+<input type="checkbox" id="navtoggle" class="navtoggle" hidden>
+<header class="topbar">
+  <label for="navtoggle" class="burger" aria-label="Menu">☰</label>
+  <span class="brand-sm">संसदीय दलको कार्यालय · PP Office</span>
+  <form class="language-switch" method="post" action="{{ url_for('set_language', language='ne' if language != 'ne' else 'en') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+    <button type="submit" lang="{{ 'en' if language == 'ne' else 'ne' }}" aria-label="{{ 'Switch to English' if language == 'ne' else 'नेपालीमा हेर्नुहोस्' }}">{{ 'English' if language == 'ne' else 'नेपाली' }}</button>
+  </form>
+  <a class="bell" href="{{ url_for('notifications') }}">🔔{% if unread %}<b>{{ unread }}</b>{% endif %}</a>
+</header>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-nep">संसदीय दलको कार्यालय</div>
+    <div class="brand-main">Parliamentary Party Office</div>
+    <div class="brand-sub">Nepal · संघीय संसद तथा प्रदेश सभा</div>
+  </div>
+  <div class="sidebar-date">
+    <span class="cal-badge">BS</span> {{ bs_today.split(' (')[0] if bs_today else today }}
+  </div>
+  <form class="language-switch sidebar-language" method="post" action="{{ url_for('set_language', language='ne' if language != 'ne' else 'en') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+    <span>{{ 'Language' if language == 'en' else 'भाषा' }}</span>
+    <button type="submit" lang="{{ 'en' if language == 'ne' else 'ne' }}">{{ 'नेपाली' if language == 'en' else 'English' }}</button>
+  </form>
+  <nav>
+    <a href="{{ url_for('dashboard') }}" class="{{ 'on' if request.endpoint=='dashboard' }}">
+      <span class="nav-icon">🏛️</span>
+      <span class="nav-text">Dashboard <small class="nep">ड्यासबोर्ड</small></span>
+    </a>
+    <a href="{{ url_for('office_desk') }}" class="{{ 'on' if request.endpoint=='office_desk' }}">
+      <span class="nav-icon">🏢</span>
+      <span class="nav-text">Dal Office Desk <small class="nep">दल कार्यालय</small></span>
+    </a>
+    <a href="{{ url_for('members_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('member') }}">
+      <span class="nav-icon">👥</span>
+      <span class="nav-text">Members / MPs <small class="nep">सांसदहरू</small></span>
+    </a>
+    <a href="{{ url_for('sittings_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('sitting') }}">
+      <span class="nav-icon">🗳️</span>
+      <span class="nav-text">House Sittings <small class="nep">सदन हाजिरी</small></span>
+    </a>
+    <a href="{{ url_for('whips_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('whip') }}">
+      <span class="nav-icon">⚖️</span>
+      <span class="nav-text">Whips & Directives <small class="nep">ह्वीप व्यवस्थापन</small></span>
+    </a>
+    <a href="{{ url_for('rosters_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('roster') }}">
+      <span class="nav-icon">🎙️</span>
+      <span class="nav-text">Floor Speakers <small class="nep">सदन वक्ता रोष्टर</small></span>
+    </a>
+    <a href="{{ url_for('meetings_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('meeting') }}">
+      <span class="nav-icon">🤝</span>
+      <span class="nav-text">Party Meetings <small class="nep">दलको बैठक</small></span>
+    </a>
+    <a href="{{ url_for('leaves_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('leave') }}">
+      <span class="nav-icon">📅</span>
+      <span class="nav-text">Leave & Attendance <small class="nep">बिदा अनुगमन</small></span>
+    </a>
+    <a href="{{ url_for('letters_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('letter') }}">
+      <span class="nav-icon">✉️</span>
+      <span class="nav-text">Correspondence <small class="nep">आगत/प्रेषित पत्र</small></span>
+    </a>
+    <a href="{{ url_for('bills_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('bill') }}">
+      <span class="nav-icon">📜</span>
+      <span class="nav-text">Bills & Laws <small class="nep">विधेयक तथा कानुन</small></span>
+    </a>
+    <a href="{{ url_for('committees_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('committee') }}">
+      <span class="nav-icon">📑</span>
+      <span class="nav-text">Committees <small class="nep">संसदीय समिति</small></span>
+    </a>
+    <a href="{{ url_for('questions_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('question') }}">
+      <span class="nav-icon">❓</span>
+      <span class="nav-text">Questions <small class="nep">संसदीय प्रश्न</small></span>
+    </a>
+    <a href="{{ url_for('tasks_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('task') }}">
+      <span class="nav-icon">✅</span>
+      <span class="nav-text">Tasks <small class="nep">दलका कार्यहरू</small></span>
+    </a>
+    <a href="{{ url_for('documents_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('document') }}">
+      <span class="nav-icon">📁</span>
+      <span class="nav-text">Documents <small class="nep">अभिलेख तथा कागजात</small></span>
+    </a>
+    <a href="{{ url_for('notifications') }}" class="{{ 'on' if request.endpoint=='notifications' }}">
+      <span class="nav-icon">🔔</span>
+      <span class="nav-text">Notifications{% if unread %} <span class="pill">{{ unread }}</span>{% endif %}</span>
+    </a>
+    {% if can('audit.view') %}
+    <a href="{{ url_for('audit') }}" class="{{ 'on' if request.endpoint=='audit' }}">
+      <span class="nav-icon">🔍</span>
+      <span class="nav-text">Audit trail <small class="nep">अडिट लग</small></span>
+    </a>
+    {% endif %}
+    {% if can('user.manage') %}
+    <a href="{{ url_for('users_list') }}" class="{{ 'on' if request.endpoint and request.endpoint.startswith('user') }}">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-text">Users & Staff <small class="nep">प्रयोगकर्ता</small></span>
+    </a>
+    {% endif %}
+  </nav>
+  <div class="me">
+    <a href="{{ url_for('account') }}"><strong>{{ g.user.name }}</strong></a>
+    <small>{{ ROLES.get(g.user.role, g.user.role) }}</small>
+    <form method="post" action="{{ url_for('logout') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf() }}">
+      <button class="linkbtn">Log out (बाहिरिनुहोस्)</button>
+    </form>
+  </div>
+</aside>
+<label for="navtoggle" class="scrim"></label>
+{% endif %}
+<main class="{{ 'main' if g.user else 'main-bare' }}">
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+{% if not g.user %}
+<form class="language-switch language-login" method="post" action="{{ url_for('set_language', language='ne' if language != 'ne' else 'en') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+  <button type="submit">{{ 'English' if language == 'ne' else 'नेपाली' }}</button>
+</form>
+{% endif %}
+</body>
+</html>

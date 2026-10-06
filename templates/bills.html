@@ -1,0 +1,30 @@
+{% extends 'base.html' %}{% block title %}Bills{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Bills</h1>{% if can('bill.create') %}<a class="btn primary" href="{{ url_for('bill_new') }}">+ New bill</a>{% endif %}</div>
+<form class="filters card" method="get">
+  <input type="search" name="q" value="{{ term }}" placeholder="Search title, description or BILL-0001">
+  <select name="status"><option value="">All statuses</option>{% for s in STATUSES %}<option {{ 'selected' if s==status }}>{{ s }}</option>{% endfor %}</select>
+  <select name="priority"><option value="">All priorities</option>{% for s in PRIORITIES %}<option {{ 'selected' if s==prio }}>{{ s }}</option>{% endfor %}</select>
+  <select name="category"><option value="">All categories</option>{% for s in CATEGORIES %}<option {{ 'selected' if s==cat }}>{{ s }}</option>{% endfor %}</select>
+  <button class="btn">Filter</button>
+  {% if term or status or prio or cat %}<a class="btn" href="{{ url_for('bills_list') }}">Clear</a>{% endif %}
+</form>
+<div class="card tablewrap">
+{% if bills %}
+<table class="tbl">
+  <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Priority</th><th>Committee</th><th>Researcher</th><th>MP</th><th>Position</th><th>Deadline</th></tr></thead>
+  <tbody>
+  {% for b in bills %}
+  <tr><td class="muted">{{ b.id|billno }}</td>
+    <td><a href="{{ url_for('bill_view', bid=b.id) }}">{{ b.title }}</a></td>
+    <td><span class="badge s-{{ b.status|slug }}">{{ b.status }}</span></td>
+    <td><span class="badge p-{{ b.priority|slug }}">{{ b.priority }}</span></td>
+    <td>{{ b.committee_name or '—' }}</td><td>{{ b.researcher or '—' }}</td><td>{{ b.mp or '—' }}</td>
+    <td>{{ b.party_position or 'Pending' }}</td>
+    <td class="{{ 'late' if b.deadline and b.deadline < today and b.status != 'Closed' }}">{{ b.deadline or '—' }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted pad">No bills found{% if not is_staff() %} (you only see bills assigned to you){% endif %}.</p>{% endif %}
+</div>
+{% endblock %}

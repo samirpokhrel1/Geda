@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Users</h1><a class="btn primary" href="{{ url_for('user_new') }}">+ New user</a></div>
+<div class="card tablewrap"><table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
+{% for u in users %}<tr><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ ROLES[u.role] }}</td><td><span class="badge">{{ u.status }}</span></td>
+<td>{% if u.id != g.user.id %}<form method="post" action="{{ url_for('user_toggle', uid=u.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="linkbtn">{{ 'Deactivate' if u.status=='active' else 'Activate' }}</button></form>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+<section class="card"><h2>Reset demo data</h2>
+<p class="muted">Deletes ALL data and uploaded files and reloads the fictional demo set. Never use on real data.</p>
+<form method="post" action="{{ url_for('reset_demo') }}" class="row"><input type="hidden" name="_csrf" value="{{ csrf() }}">
+<input name="confirm" placeholder="Type RESET" autocomplete="off"><button class="btn danger">Reset demo data</button></form></section>
+{% endblock %}

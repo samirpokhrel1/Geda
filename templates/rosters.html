@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Floor Speakers Roster (सदन वक्ता व्यवस्थापन){% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">संसदीय दलको सदन समन्वय · FLOOR MANAGEMENT</span>
+    <h1>सदन वक्ता व्यवस्थापन तथा रोष्टर · Floor Speakers Roster</h1>
+    <p class="muted">Zero Hour, Special Hour, Emergency Hour, and Bill Debate speaking allocations</p>
+  </div>
+  <div class="row">
+    {% if can('roster.manage') %}
+    <a class="btn primary" href="{{ url_for('roster_new') }}">+ Schedule Floor Speaker (वक्ता निर्धारण गर्नुहोस्)</a>
+    {% endif %}
+    <a class="btn" href="{{ url_for('roster_print', house=sel_house, session_date=sel_date) }}" target="_blank">
+      Print Speaker List for Speaker Secretariat 🖨️
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" action="{{ url_for('rosters_list') }}" class="filters">
+    <select name="house">
+      <option value="">— All Assemblies (सबै सभाहरू) —</option>
+      {% for h in HOUSES %}
+      <option value="{{ h }}" {{ 'selected' if sel_house==h }}>{{ HOUSE_LABELS.get(h, h) }}</option>
+      {% endfor %}
+    </select>
+    <select name="session_type">
+      <option value="">— Session Type (सत्र प्रकार) —</option>
+      {% for t in SESSION_TYPES %}
+      <option value="{{ t }}" {{ 'selected' if sel_type==t }}>{{ SESSION_TYPE_LABELS.get(t, t) }}</option>
+      {% endfor %}
+    </select>
+    <input type="date" name="session_date" value="{{ sel_date }}" placeholder="Session Date">
+    <button class="btn">Filter</button>
+    {% if sel_house or sel_type or sel_date %}
+    <a href="{{ url_for('rosters_list') }}" class="btn">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card tablewrap">
+  {% if rosters %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>मिति / सभा</th>
+        <th>सत्र (Session)</th>
+        <th>क्रम</th>
+        <th>वक्ता माननीय (Speaker MP)</th>
+        <th>समय</th>
+        <th>विषय तथा मुख्य बुँदाहरू (Topic / Talking Points)</th>
+        <th>स्थिति (Status)</th>
+        <th>कार्य (Actions)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rosters %}
+      <tr>
+        <td>
+          <strong>{{ r.session_date }}</strong>
+          <small class="d-block text-nepali">{{ r.session_date|bs_date }}</small>
+          <small class="muted">{{ HOUSE_LABELS.get(r.house, r.house) }}</small>
+        </td>
+        <td>
+          <span class="badge">{{ r.session_type }}</span>
+          {% if r.bill_title %}<small class="d-block muted">विधेयक: {{ r.bill_title }}</small>{% endif %}
+        </td>
+        <td><strong>#{{ r.speaking_order }}</strong></td>
+        <td>
+          <a href="{{ url_for('member_view', pid=r.parliamentarian_id) }}"><strong>{{ r.mp_name }}</strong></a>
+          {% if r.name_ne %}<small class="d-block text-nepali">{{ r.name_ne }}</small>{% endif %}
+          <small class="muted">{{ r.constituency or r.mp_house }}</small>
+        </td>
+        <td><strong>{{ r.allocated_minutes }} मिनेट</strong></td>
+        <td>
+          <strong>{{ r.topic }}</strong>
+          {% if r.talking_points %}
+          <p class="pre muted" style="margin: .2rem 0 0; font-size: .85rem; max-width: 400px;">{{ r.talking_points }}</p>
+          {% endif %}
+        </td>
+        <td><span class="badge s-{{ r.status|slug }}">{{ r.status }}</span></td>
+        <td>
+          {% if can('roster.manage') %}
+          <form method="post" action="{{ url_for('roster_status', rid=r.id) }}" style="display: inline-block;">
+            <input type="hidden" name="_csrf" value="{{ csrf() }}">
+            <select name="status" onchange="this.form.submit()" style="font-size: .78rem; padding: .2rem .3rem;">
+              <option value="Scheduled" {{ 'selected' if r.status=='Scheduled' }}>Scheduled</option>
+              <option value="Submitted to Secretariat" {{ 'selected' if r.status=='Submitted to Secretariat' }}>सचिवालयमा पेश</option>
+              <option value="Delivered" {{ 'selected' if r.status=='Delivered' }}>सम्पन्न (Delivered)</option>
+              <option value="Cancelled" {{ 'selected' if r.status=='Cancelled' }}>रद्द (Cancelled)</option>
+            </select>
+          </form>
+          <form method="post" action="{{ url_for('roster_delete', rid=r.id) }}" style="display: inline-block; margin-left: 2px;" onsubmit="return confirm('Remove speaker from roster?')">
+            <input type="hidden" name="_csrf" value="{{ csrf() }}">
+            <button class="btn-sm danger" style="padding: .15rem .4rem;">×</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="pad muted">No scheduled floor speakers found for the selected criteria.</p>
+  {% endif %}
+</div>
+{% endblock %}

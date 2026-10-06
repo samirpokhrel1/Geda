@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block title %}Tasks{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Tasks</h1><a class="btn primary" href="{{ url_for('task_new') }}">+ New task</a></div>
+<nav class="tabs">
+  {% for v, l in [('open','Open'),('mine','Assigned to me'),('overdue','Overdue'),('done','Done'),('all','All')] %}<a href="{{ url_for('tasks_list', view=v) }}" class="{{ 'on' if v==view }}">{{ l }}</a>{% endfor %}
+</nav>
+<div class="card tablewrap">
+{% if tasks %}<table class="tbl"><thead><tr><th></th><th>Task</th><th>Owner</th><th>Related</th><th>Deadline</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>
+{% for t in tasks %}<tr class="{{ 'doneRow' if t.status=='Done' }}">
+  <td><form method="post" action="{{ url_for('task_toggle', tid=t.id) }}"><input type="hidden" name="_csrf" value="{{ csrf() }}"><button class="check" title="Toggle done">{{ '☑' if t.status=='Done' else '☐' }}</button></form></td>
+  <td>{{ t.title }}</td><td>{{ t.owner or '—' }}</td>
+  <td>{% if t.bill_title %}<a href="{{ url_for('bill_view', bid=t.related_id) }}">{{ t.bill_title }}</a>{% else %}—{% endif %}</td>
+  <td class="{{ 'late' if t.deadline and t.deadline < today and t.status != 'Done' }}">{{ t.deadline or '—' }}</td>
+  <td><span class="badge p-{{ t.priority|slug }}">{{ t.priority }}</span></td><td>{{ t.status }}</td>
+  <td><a href="{{ url_for('task_edit', tid=t.id) }}">Edit</a></td></tr>
+{% endfor %}</tbody></table>{% else %}<p class="muted pad">No tasks here.</p>{% endif %}
+</div>
+{% endblock %}

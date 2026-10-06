@@ -1,0 +1,249 @@
+{% extends 'base.html' %}{% block title %}{{ b.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="muted">{{ b.id|billno }}</span>
+    <h1>{{ b.title }}</h1>
+    {% if b.nepali_title %}<h2 class="text-nepali" style="margin: 0 0 .4rem;">{{ b.nepali_title }}</h2>{% endif %}
+    <span class="badge badge-house">{{ HOUSE_LABELS.get(b.house, b.house) }}</span>
+    <span class="badge s-{{ b.status|slug }}">{{ b.status }}</span>
+    <span class="badge p-{{ b.priority|slug }}">{{ b.priority }} priority</span>
+  </div>
+  <div class="row">
+    {% if can('bill.edit') %}<a class="btn" href="{{ url_for('bill_edit', bid=b.id) }}">Edit</a>{% endif %}
+    <a class="btn" href="{{ url_for('bills_list') }}">← All bills</a>
+  </div>
+</div>
+
+<nav class="tabs">
+  {% for t in TABS %}
+  <a href="{{ url_for('bill_view', bid=b.id, tab=t) }}" class="{{ 'on' if t==tab }}">
+    {{ t|capitalize }}{% if counts.get(t) %} <span class="pill">{{ counts[t] }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</nav>
+
+{% if tab == 'overview' %}
+<div class="grid2">
+<section class="card"><h2>Details</h2>
+  <dl class="kv">
+    <dt>Nepali Title</dt><dd class="text-nepali">{{ b.nepali_title or '—' }}</dd>
+    <dt>Legislative Body</dt><dd><strong>{{ HOUSE_LABELS.get(b.house, b.house) }}</strong></dd>
+    <dt>Bill Type</dt><dd>{{ b.bill_type or 'Government' }} Bill</dd>
+    <dt>Description</dt><dd>{{ b.description or '—' }}</dd>
+    <dt>Category</dt><dd>{{ b.category or '—' }}</dd>
+    <dt>Committee</dt><dd>{% if b.committee_id %}<a href="{{ url_for('committee_view', cid=b.committee_id) }}">{{ b.committee_name }}</a>{% else %}—{% endif %}</dd>
+    <dt>Introduced</dt><dd>{{ b.introduced_date or '—' }} {% if b.introduced_date %}<small class="muted">({{ b.introduced_date|bs_date }})</small>{% endif %}</dd>
+    <dt>Deadline</dt><dd class="{{ 'late' if b.deadline and b.deadline < today and b.status != 'Closed' }}">{{ b.deadline or '—' }}</dd>
+    <dt>Next action</dt><dd>{{ b.next_action or '—' }}</dd>
+    <dt>Party position</dt><dd><strong>{{ b.party_position or 'Pending' }}</strong>{% if b.decision_date %} <span class="muted">({{ b.decision_date }})</span>{% endif %}</dd>
+    <dt>Researcher</dt><dd>{{ assign.researcher.name if assign.researcher else 'Unassigned' }}</dd>
+    <dt>Parliamentarian</dt><dd>{{ assign.parliamentarian.name if assign.parliamentarian else 'Unassigned' }}</dd>
+    <dt>Last updated</dt><dd>{{ b.updated_at|fdt }}</dd>
+  </dl>
+</section>
+<section class="card"><h2>Workflow</h2>
+  <ol class="steps">
+    {% for s in STATUSES %}<li class="{{ 'now' if s==b.status else ('done' if STATUSES.index(s) < STATUSES.index(b.status) else '') }}">{{ s }}</li>{% endfor %}
+  </ol>
+  {% if can('bill.status') %}
+  <form method="post" action="{{ url_for('bill_status', bid=b.id) }}" class="row">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <select name="status">{% for s in STATUSES %}<option {{ 'selected' if s==b.status }}>{{ s }}</option>{% endfor %}</select>
+    <button class="btn">Update status</button>
+  </form>
+  {% endif %}
+  {% if can('meeting.manage') %}<p><a href="{{ url_for('meeting_new', bill=b.id) }}">Schedule a meeting for this bill →</a></p>{% endif %}
+</section>
+</div>
+
+{% elif tab == 'research' %}
+{% if can('bill.research') %}
+<form method="post" action="{{ url_for('bill_research', bid=b.id) }}" class="card form">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}"><h2>Add research note</h2>
+  <label class="field"><span>Summary *</span><input name="summary" required maxlength="300"></label>
+  <label class="field"><span>Notes</span><textarea name="notes" rows="5"></textarea></label>
+  <div class="actions"><button class="btn primary">Save research</button></div>
+</form>
+{% endif %}
+{% for r in research %}<article class="card"><h3>{{ r.summary }}</h3><p class="pre">{{ r.notes or '' }}</p><small class="muted">{{ r.author or 'Unknown' }} · {{ r.created_at|fdt }}</small></article>
+{% else %}<p class="muted">No research recorded yet.</p>{% endfor %}
+
+{% elif tab == 'position' %}
+<section class="card"><h2>Current party position</h2>
+  <p class="big">{{ b.party_position or 'Pending' }}</p>{% if b.decision_date %}<p class="muted">Decided {{ b.decision_date }}</p>{% endif %}</section>
+{% if can('bill.position') %}
+<form method="post" action="{{ url_for('bill_position', bid=b.id) }}" class="card form">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}"><h2>Record position</h2>
+  <label class="field"><span>Position *</span><select name="position">{% for p in POSITIONS %}<option>{{ p }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Decision date *</span><input type="date" name="decision_date" value="{{ today }}" required></label>
+  <label class="field"><span>Decided by (responsible authority) *</span><input name="decided_by" required placeholder="e.g. Parliamentary Party Committee"></label>
+  <label class="field"><span>Notes</span><textarea name="notes" rows="3"></textarea></label>
+  <div class="actions"><button class="btn primary">Record position</button></div>
+</form>
+{% endif %}
+<section class="card"><h2>History</h2>
+{% for p in positions %}<p><strong>{{ p.position }}</strong> · {{ p.decision_date }} · decided by {{ p.decided_by }}<br><span class="muted">{{ p.notes or '' }} (recorded by {{ p.recorder or '—' }})</span></p>
+{% else %}<p class="muted">No positions recorded yet.</p>{% endfor %}</section>
+
+{% elif tab == 'amendments' %}
+<div class="card">
+  <div class="page-head" style="margin-bottom: .8rem;">
+    <h2>📝 दलका संशोधन प्रस्तावहरू · Party Registered Amendments</h2>
+    <span class="muted">संसद सचिवालयमा दर्ता हुने दफावार संशोधन प्रस्ताव</span>
+  </div>
+
+  {% if can('amendment.manage') %}
+  <form method="post" action="{{ url_for('amendment_new', bid=b.id) }}" class="form" style="margin-bottom: 1.5rem; background: #fafbfc; padding: 1rem; border-radius: 8px; border: 1px solid var(--line);">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}">
+    <h3>+ नयाँ संशोधन प्रस्ताव दर्ता गर्नुहोस् (Register Amendment)</h3>
+    <div class="grid2">
+      <div class="field">
+        <span>दफा वा खण्ड (Clause / Section) *</span>
+        <input name="section_clause" placeholder="जस्तै: दफा १४ को उपदफा (३)" required>
+      </div>
+      <div class="field">
+        <span>संशोधनकर्ता माननीय (Sponsoring MP)</span>
+        <select name="parliamentarian_id">
+          <option value="">— Select MP —</option>
+          {% for m in mps %}
+          <option value="{{ m.id }}">{{ m.name }} ({{ m.constituency or 'MP' }})</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <span>प्रस्तावित संशोधन व्यहोरा (Proposed Text) *</span>
+      <textarea name="proposed_text" rows="3" placeholder="विधेयकको साविकको व्यवस्थालाई हटाएर वा थप गरेर राख्नुपर्ने दलको आधिकारिक व्यहोरा..." required></textarea>
+    </div>
+    <div class="field">
+      <span>संशोधनको औचित्य तथा कारण (Rationale)</span>
+      <input name="rationale" placeholder="संशोधन पेश गर्नुपर्ने कानुनी तथा नीतिगत कारण...">
+    </div>
+    <div class="actions">
+      <button class="btn primary">Register Amendment (संशोधन दर्ता गर्नुहोस्)</button>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if amendments %}
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>दफा / खण्ड</th>
+        <th>प्रस्तावित संशोधन व्यहोरा (Proposed Amendment)</th>
+        <th>संशोधनकर्ता</th>
+        <th>दलको धारणा</th>
+        <th>स्थिति</th>
+        {% if can('bill.edit') %}<th>कार्य</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in amendments %}
+      <tr>
+        <td><strong>{{ a.section_clause }}</strong></td>
+        <td>
+          <div style="font-weight: 500;">{{ a.proposed_text }}</div>
+          {% if a.rationale %}<small class="muted d-block">कारण: {{ a.rationale }}</small>{% endif %}
+        </td>
+        <td>{{ a.mp_name or 'Party Caucus' }}</td>
+        <td><span class="badge s-position-decided">{{ a.party_stance }}</span></td>
+        <td><span class="badge s-{{ a.status|slug }}">{{ a.status }}</span></td>
+        {% if can('bill.edit') %}
+        <td>
+          <form method="post" action="{{ url_for('amendment_status', bid=b.id, aid=a.id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf() }}">
+            <select name="status" onchange="this.form.submit()" style="font-size: .78rem; padding: .2rem .3rem;">
+              <option value="Registered" {{ 'selected' if a.status=='Registered' }}>Registered</option>
+              <option value="Accepted" {{ 'selected' if a.status=='Accepted' }}>Accepted (स्वीकृत)</option>
+              <option value="Rejected" {{ 'selected' if a.status=='Rejected' }}>Rejected (अस्वीकृत)</option>
+              <option value="Withdrawn" {{ 'selected' if a.status=='Withdrawn' }}>Withdrawn (फिर्ता)</option>
+            </select>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No party amendments registered on this bill yet.</p>
+  {% endif %}
+</div>
+
+{% elif tab == 'assignments' %}
+<div class="grid2">
+{% for kind, label, choices in [('researcher','Researcher', researchers or []), ('parliamentarian','Parliamentarian', mps or [])] %}
+<section class="card"><h2>{{ label }}</h2>
+  <p class="big">{{ assign[kind].name if assign.get(kind) else 'Unassigned' }}</p>
+  {% if can('bill.assign') %}
+  <form method="post" action="{{ url_for('bill_assign', bid=b.id) }}" class="row">
+    <input type="hidden" name="_csrf" value="{{ csrf() }}"><input type="hidden" name="assignment_type" value="{{ kind }}">
+    <select name="user_id">{% for v, l in choices %}<option value="{{ v }}" {{ 'selected' if assign.get(kind) and assign[kind].user_id|string == v }}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn">Assign</button>
+  </form>{% endif %}
+</section>
+{% endfor %}
+</div>
+
+{% elif tab == 'documents' %}
+<div class="page-head"><h2>Documents</h2>
+  <a class="btn primary" href="{{ url_for('document_upload', type='bill', id=b.id) }}">+ Upload document</a></div>
+{% if docs %}
+<table class="tbl">
+  <thead><tr><th>Name</th><th>Category</th><th>Access</th><th>Uploaded by</th><th>Date</th><th></th></tr></thead>
+  <tbody>
+  {% for d in docs %}
+  <tr>
+    <td>{{ d.name }}</td><td><span class="badge">{{ d.category or '—' }}</span></td>
+    <td><span class="badge">{{ d.access_level }}</span></td><td class="muted">{{ d.uploader or '—' }}</td>
+    <td class="muted">{{ d.uploaded_at|fdt }}</td>
+    <td><a class="btn" href="{{ url_for('document_download', did=d.id) }}">Download</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No documents attached.</p>{% endif %}
+
+{% elif tab == 'tasks' %}
+<div class="page-head"><h2>Tasks</h2></div>
+<form method="post" action="{{ url_for('bill_task', bid=b.id) }}" class="card form row" style="align-items:flex-end">
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  <label class="field" style="flex:2;min-width:200px"><span>Title *</span><input name="title" required></label>
+  <label class="field"><span>Owner</span><select name="owner_id">{% for v, l in users %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Priority</span><select name="priority">{% for p in PRIORITIES %}<option {{ 'selected' if p=='Medium' }}>{{ p }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Deadline</span><input type="date" name="deadline"></label>
+  <button class="btn primary" style="margin-bottom:.85rem">Add task</button>
+</form>
+{% if tasks %}
+<table class="tbl">
+  <thead><tr><th></th><th>Task</th><th>Owner</th><th>Priority</th><th>Deadline</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for t in tasks %}
+  <tr class="{{ 'doneRow' if t.status=='Done' else '' }}">
+    <td>
+      <form method="post" action="{{ url_for('task_toggle', tid=t.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf() }}">
+        <button class="check" title="Toggle status">{{ '☑' if t.status=='Done' else '☐' }}</button>
+      </form>
+    </td>
+    <td><a href="{{ url_for('task_edit', tid=t.id) }}">{{ t.title }}</a></td>
+    <td class="muted">{{ t.owner or '—' }}</td>
+    <td><span class="badge p-{{ t.priority|slug }}">{{ t.priority }}</span></td>
+    <td class="{{ 'late' if t.deadline and t.deadline < today and t.status != 'Done' }}">{{ t.deadline or '—' }}</td>
+    <td><span class="badge">{{ t.status }}</span></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No tasks on this bill.</p>{% endif %}
+
+{% elif tab == 'timeline' %}
+<section class="card"><h2>Timeline</h2>
+  {% if logs %}<ul class="feed">
+  {% for l in logs %}<li><strong>{{ l.actor or 'System' }}</strong> {{ l.action }}{% if l.detail %} — <span class="muted">{{ l.detail }}</span>{% endif %}<small>{{ l.timestamp|fdt }}</small></li>{% endfor %}
+  </ul>{% else %}<p class="muted">No history.</p>{% endif %}
+</section>
+{% endif %}
+
+{% endblock %}

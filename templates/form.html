@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ title }}</h1>{% if sub %}<span class="muted">{{ sub }}</span>{% endif %}</div>
+<form method="post" class="card form" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf() }}">
+  {% for f in spec %}
+  <label class="field"><span>{{ f.label }}{% if f.required %} *{% endif %}</span>
+    {% if f.type == 'textarea' %}
+      <textarea name="{{ f.name }}" rows="{{ f.rows or 4 }}">{{ values.get(f.name) or '' }}</textarea>
+    {% elif f.type == 'select' %}
+      <select name="{{ f.name }}">{% for v, l in f.choices %}<option value="{{ v }}" {{ 'selected' if (values.get(f.name) or '')|string == v|string }}>{{ l }}</option>{% endfor %}</select>
+    {% elif f.type == 'password' %}
+      <input type="password" name="{{ f.name }}" autocomplete="new-password">
+    {% else %}
+      <input type="{{ f.type or 'text' }}" name="{{ f.name }}" value="{{ values.get(f.name) or '' }}">
+    {% endif %}
+    {% if errors.get(f.name) %}<em class="err">{{ errors[f.name] }}</em>{% endif %}
+    {% if f.help %}<small class="muted">{{ f.help }}</small>{% endif %}
+  </label>
+  {% endfor %}
+  <div class="actions"><button class="btn primary">{{ submit }}</button><a class="btn" href="{{ back }}">Cancel</a></div>
+</form>
+{% endblock %}
